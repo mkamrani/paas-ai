@@ -63,10 +63,10 @@ def list_servers(status: str, format: str, verbose: bool):
         if format == "table":
             logger.info("\nMCP Servers:")
             logger.info("Name              Type        Status    Transport  Last Contact")
-            logger.info("jira-server       jira        running   stdio      2m ago")
             logger.info("confluence-server confluence  running   stdio      1m ago")
             logger.info("github-server     github      stopped   sse        5h ago")
             logger.info("web-scraper       web         running   stdio      30s ago")
+            logger.info("docs-api          custom      running   stdio      45s ago")
         else:
             logger.info("MCP servers (JSON format)")
             # TODO: Output actual JSON
@@ -115,7 +115,7 @@ def start_server(server_name: str, config: Optional[Path], transport: Optional[s
     ▶️ Start an MCP server.
     
     Examples:
-      paas-ai mcp start jira-server
+      paas-ai mcp start confluence-server
       paas-ai mcp start confluence-server --wait
       paas-ai mcp start custom-server --config ./custom.yaml
     """
@@ -169,7 +169,7 @@ def stop_server(server_name: str, force: bool, timeout: int):
     ⏹️ Stop an MCP server.
     
     Examples:
-      paas-ai mcp stop jira-server
+      paas-ai mcp stop confluence-server
       paas-ai mcp stop confluence-server --force
       paas-ai mcp stop web-scraper --timeout 30
     """
@@ -211,7 +211,7 @@ def restart_server(server_name: str, wait: bool):
     🔄 Restart an MCP server.
     
     Examples:
-      paas-ai mcp restart jira-server
+      paas-ai mcp restart confluence-server
       paas-ai mcp restart confluence-server --wait
     """
     logger = get_logger("paas_ai.cli.mcp")
@@ -250,7 +250,7 @@ def server_status(server_name: Optional[str], detailed: bool):
     
     Examples:
       paas-ai mcp status
-      paas-ai mcp status jira-server --detailed
+      paas-ai mcp status confluence-server --detailed
     """
     logger = get_logger("paas_ai.cli.mcp")
     logger.set_context("MCP-STATUS")
@@ -317,7 +317,7 @@ def test_server(server_name: str, method: Optional[str], timeout: int):
     🧪 Test MCP server connectivity and functionality.
     
     Examples:
-      paas-ai mcp test jira-server
+      paas-ai mcp test confluence-server
       paas-ai mcp test confluence-server --method list_tools
       paas-ai mcp test web-scraper --timeout 30
     """
@@ -368,7 +368,7 @@ def test_server(server_name: str, method: Optional[str], timeout: int):
 )
 @click.option(
     '--type',
-    type=click.Choice(['jira', 'confluence', 'github', 'web', 'custom']),
+    type=click.Choice(['confluence', 'github', 'web', 'custom']),
     required=True,
     help='Type of MCP server'
 )
@@ -404,7 +404,7 @@ def add_server(
     ➕ Add a new MCP server configuration.
     
     Examples:
-      paas-ai mcp add --name my-jira --type jira --config jira.yaml
+      paas-ai mcp add --name my-confluence --type confluence --config confluence.yaml
       paas-ai mcp add --name custom-api --type custom --command "python api_server.py"
       paas-ai mcp add --name github-repo --type github --auto-start
     """
@@ -522,7 +522,7 @@ def show_logs(server_name: str, lines: int, follow: bool, level: Optional[str]):
     📄 Show logs for an MCP server.
     
     Examples:
-      paas-ai mcp logs show jira-server
+      paas-ai mcp logs show confluence-server
       paas-ai mcp logs show confluence-server --follow
       paas-ai mcp logs show web-scraper --lines 100 --level ERROR
     """

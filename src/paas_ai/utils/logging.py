@@ -156,6 +156,9 @@ class PaaSLogger:
         # Clear existing handlers
         self.logger.handlers.clear()
         
+        # Disable propagation to parent loggers to avoid duplicate messages
+        self.logger.propagate = False
+        
         # Add custom levels
         self._add_custom_levels()
         

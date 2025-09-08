@@ -1,0 +1,2 @@
+[console_scripts]
+paas-ai = paas_ai.cli.main:main

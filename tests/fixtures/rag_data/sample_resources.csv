@@ -1,0 +1,4 @@
+url,type,priority,tags,chunk_size,chunk_overlap
+tests/fixtures/rag_data/sample.md,dsl,5,"kubernetes,docker",1000,200
+https://kubernetes.io/docs/concepts/,dsl,8,"kubernetes,official",1500,300
+https://docs.docker.com/,contextual,6,"docker,containers",1200,200 

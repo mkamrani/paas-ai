@@ -28,15 +28,37 @@ class CLIContext:
 pass_context = click.make_pass_decorator(CLIContext, ensure=True)
 
 
+def validate_verbosity_options(ctx, param, value):
+    """Validate that verbose and quiet options are mutually exclusive."""
+    if not hasattr(ctx, '_verbosity_options'):
+        ctx._verbosity_options = {}
+    
+    # Store the current option if it's set
+    if value:
+        ctx._verbosity_options[param.name] = value
+    
+    # Check for conflicts
+    if len(ctx._verbosity_options) > 1:
+        options_used = [f"--{name}" for name in ctx._verbosity_options.keys()]
+        raise click.ClickException(
+            f"Options {' and '.join(options_used)} are mutually exclusive. "
+            f"Please use only one verbosity option."
+        )
+    
+    return value
+
+
 @click.group()
 @click.option(
     '--verbose', '-v',
     is_flag=True,
+    callback=validate_verbosity_options,
     help='Enable verbose output (DEBUG level logging)'
 )
 @click.option(
     '--quiet', '-q',
     is_flag=True,
+    callback=validate_verbosity_options,
     help='Suppress all output except errors'
 )
 @click.option(
@@ -76,10 +98,10 @@ def cli(
     Generate production-ready PaaS configurations using intelligent agents
     that understand your requirements and best practices.
     
-    Examples:
-      paas-ai generate --from-jira TICKET-123
-      paas-ai rag sync --incremental
-      paas-ai validate deployment.yaml
+      Examples:
+    paas-ai generate --from-confluence https://wiki.company.com/requirements
+    paas-ai rag sync --incremental
+    paas-ai validate deployment.yaml
     """
     # Set up logging based on options
     if quiet:
@@ -115,10 +137,6 @@ def cli(
 
 @cli.command()
 @click.option(
-    '--from-jira', 
-    help='Generate from Jira ticket (e.g., PROJ-123)'
-)
-@click.option(
     '--from-confluence',
     help='Generate from Confluence page URL'
 )
@@ -152,7 +170,6 @@ def cli(
 @pass_context
 def generate(
     ctx: CLIContext,
-    from_jira: Optional[str],
     from_confluence: Optional[str],
     from_file: Optional[Path],
     output: Path,
@@ -167,7 +184,7 @@ def generate(
     based on requirements from various sources.
     
     Examples:
-      paas-ai generate --from-jira TICKET-123 --platform kubernetes
+      paas-ai generate --from-confluence https://wiki.company.com/spec --platform kubernetes
       paas-ai generate --template webapp --output ./my-app
       paas-ai generate --from-file requirements.md --dry-run
     """
@@ -175,9 +192,9 @@ def generate(
     logger.info("Starting configuration generation")
     
     # Validate input sources
-    sources = [from_jira, from_confluence, from_file, template]
+    sources = [from_confluence, from_file, template]
     if not any(sources):
-        logger.error("No input source specified. Use --from-jira, --from-confluence, --from-file, or --template")
+        logger.error("No input source specified. Use --from-confluence, --from-file, or --template")
         sys.exit(1)
     
     if sum(bool(source) for source in sources) > 1:
@@ -188,12 +205,7 @@ def generate(
         logger.set_context("GENERATE")
         
         # Determine source type and log it
-        if from_jira:
-            logger.info(f"Generating from Jira ticket: {from_jira}")
-            logger.progress("Fetching requirements from Jira...")
-            # TODO: Implement Jira integration
-            
-        elif from_confluence:
+        if from_confluence:
             logger.info(f"Generating from Confluence: {from_confluence}")
             logger.progress("Fetching requirements from Confluence...")
             # TODO: Implement Confluence integration

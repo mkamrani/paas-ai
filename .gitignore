@@ -11,3 +11,13 @@ __pycache__/
 .env.local
 .env.development.local
 
+# Coverage
+.coverage
+htmlcov/
+
+# Test reports
+.pytest_cache/
+
+# Build artifacts
+dist/
+build/

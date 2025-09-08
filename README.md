@@ -96,7 +96,7 @@ paas-ai/
 │       │   │   │   │   ├── __init__.py
 │       │   │   │   │   ├── confluence_crawler.py  # Confluence API + change detection
 │       │   │   │   │   ├── website_crawler.py     # Web crawling + content hashing
-│       │   │   │   │   ├── jira_crawler.py        # Jira API + last modified tracking
+│       │   │   │   │   ├── api_crawler.py         # REST API + endpoint tracking
 │       │   │   │   │   ├── change_detector.py     # Content change detection utilities
 │       │   │   │   │   └── base_crawler.py        # Base with incremental update support
 │       │   │   │   ├── processors/          # Document processors
@@ -156,7 +156,6 @@ paas-ai/
 │       │   │   │   └── sse.py     # SSE transport
 │       │   │   ├── servers/       # MCP server configurations
 │       │   │   │   ├── __init__.py
-│       │   │   │   ├── jira_server.py
 │       │   │   │   ├── confluence_server.py
 │       │   │   │   ├── github_server.py
 │       │   │   │   └── web_scraper_server.py
@@ -419,7 +418,7 @@ resource_type,url_pattern,loader_name,config_profile,priority,tags
 dsl,https://kubernetes.io/docs/reference/.*\.yaml,web_loader,k8s_clean,high,"kubernetes,yaml,schema"
 contextual,confluence://spaces/ARCH/.*,confluence_loader,full_content,high,"architecture,confluence"
 guidelines,https://security\.company\.com/.*,web_loader,security_focused,critical,"security,policies"
-domain_rules,jira://PROJECT-789/component=policy,jira_loader,rule_focused,high,"policies,jira"
+domain_rules,https://api\.company\.com/policies/.*,api_loader,json_policies,high,"policies,api"
 ```
 
 #### Loader Configuration Profiles
@@ -436,10 +435,10 @@ Each loader supports multiple configuration profiles for different extraction st
 - `full_content`: Complete page content with comments
 - `policy_extraction`: Focus on policy macros and tables
 
-**Jira Loader Profiles:**
-- `template_extraction`: Extract configuration templates
-- `issue_extraction`: Best practices from issue resolutions
-- `rule_focused`: Business rules and policies
+**API Loader Profiles:**
+- `json_policies`: Extract policy rules from JSON APIs
+- `rest_endpoints`: Documentation from REST API endpoints
+- `config_api`: Configuration data from API services
 
 ### Resource Tracking and Versioning
 
@@ -493,10 +492,10 @@ class ResourceMetadata:
 - Content change timestamps
 - Attachment modification tracking
 
-**Jira:**
-- Issue update timestamps
-- Comment modification tracking
-- Custom field change detection
+**API Services:**
+- Response hash comparison
+- Endpoint modification tracking
+- Data structure change detection
 
 **File System:**
 - File modification time

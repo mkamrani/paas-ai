@@ -8,6 +8,7 @@ from ..config import EmbeddingType
 
 # Import strategies
 from .openai import OpenAIEmbeddingStrategy
+from .sentence_transformers import SentenceTransformersEmbeddingStrategy
 
 
 class EmbeddingRegistry:
@@ -15,7 +16,8 @@ class EmbeddingRegistry:
     
     _strategies: Dict[EmbeddingType, Type[EmbeddingStrategy]] = {
         EmbeddingType.OPENAI: OpenAIEmbeddingStrategy,
-        # TODO: Add remaining strategies
+        EmbeddingType.SENTENCE_TRANSFORMERS: SentenceTransformersEmbeddingStrategy,
+        # TODO: Add remaining strategies (HuggingFace, Cohere, Azure OpenAI)
     }
     
     @classmethod

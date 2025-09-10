@@ -18,7 +18,7 @@ from langchain_core.vectorstores import VectorStore
 from langchain_core.retrievers import BaseRetriever
 
 from .config import (
-    RAGConfig, ResourceConfig, ResourceType,
+    Config, ResourceConfig, ResourceType,
     get_default_loader_config, get_default_splitter_config
 )
 from .loaders import DocumentLoaderFactory
@@ -26,6 +26,9 @@ from .splitters import TextSplitterFactory
 from .embeddings import EmbeddingsFactory
 from .vectorstore import VectorStoreFactory
 from .retrievers import RetrieverFactory
+from .processing import (
+    ProcessingPipeline, ProcessingStage, ProcessingContext
+)
 from ...utils.logging import get_logger
 
 
@@ -44,10 +47,48 @@ class ConfigurationError(Exception):
     pass
 
 
+class VectorStoreStage(ProcessingStage):
+    """Pipeline stage for storing documents in vectorstore."""
+    
+    def __init__(self, rag_processor: 'RAGProcessor'):
+        super().__init__("vectorstore")
+        self.rag_processor = rag_processor
+    
+    async def process(self, context: ProcessingContext) -> ProcessingContext:
+        """Store documents in vectorstore."""
+        if not context.documents:
+            return context
+        
+        # Filter complex metadata for compatibility with vectorstores like Chroma
+        from langchain_community.vectorstores.utils import filter_complex_metadata
+        filtered_documents = filter_complex_metadata(context.documents)
+        
+        if not self.rag_processor.vectorstore:
+            # Create new vectorstore
+            self.rag_processor.vectorstore = VectorStoreFactory.create_vectorstore(
+                self.rag_processor.config.vectorstore,
+                self.rag_processor.embeddings,
+                filtered_documents
+            )
+            self.rag_processor.logger.info("Created new vectorstore")
+        else:
+            # Add to existing vectorstore
+            self.rag_processor.vectorstore.add_documents(filtered_documents)
+            self.rag_processor.logger.info(f"Added {len(filtered_documents)} documents to existing vectorstore")
+        
+        # Create/update retriever
+        self.rag_processor.retriever = RetrieverFactory.create_retriever(
+            self.rag_processor.config.retriever,
+            self.rag_processor.vectorstore
+        )
+        
+        return context
+
+
 class RAGProcessor:
     """Main RAG pipeline processor."""
     
-    def __init__(self, config: RAGConfig):
+    def __init__(self, config: Config):
         """Initialize the RAG processor with configuration."""
         self.config = config
         self.logger = get_logger("paas_ai.rag.pipeline")
@@ -64,7 +105,20 @@ class RAGProcessor:
         # Load existing vectorstore if available
         self._load_existing_vectorstore()
     
-    def _handle_initialization_error(self, error: Exception, config: RAGConfig):
+    def _create_processing_pipeline(self) -> ProcessingPipeline:
+        """Create the document processing pipeline."""
+        from .processing.stages import LoadStage, ValidateStage, SplitStage, EnrichStage
+        
+        # Create pipeline with standard stages + vectorstore stage
+        pipeline = (LoadStage() | 
+                   ValidateStage() | 
+                   SplitStage() | 
+                   EnrichStage() |
+                   VectorStoreStage(self))
+        
+        return pipeline
+    
+    def _handle_initialization_error(self, error: Exception, config: Config):
         """Handle initialization errors with helpful messages."""
         error_str = str(error).lower()
         
@@ -169,151 +223,35 @@ class RAGProcessor:
         
         raise ValidationError(f"Unsupported URL scheme: {parsed.scheme}")
     
-    def process_resource(self, resource: ResourceConfig) -> List[Document]:
-        """Process a single resource and return documents."""
-        self.logger.info(f"Processing resource: {resource.url}")
-        
-        try:
-            # Validate resource
-            self.validate_resource(resource)
-            
-            # Create loader
-            loader = DocumentLoaderFactory.create_loader(resource.loader, resource.url)
-            
-            # Load documents
-            self.logger.debug("Loading documents...")
-            documents = loader.load()
-            
-            if not documents:
-                self.logger.warning(f"No documents loaded from {resource.url}")
-                return []
-            
-            self.logger.debug(f"Loaded {len(documents)} documents")
-            
-            # Create splitter
-            splitter = TextSplitterFactory.create_splitter(resource.splitter)
-            
-            # Split documents
-            self.logger.debug("Splitting documents...")
-            # Handle splitters that only have split_text method
-            if hasattr(splitter, 'split_documents'):
-                split_docs = splitter.split_documents(documents)
-            else:
-                # For splitters like MarkdownHeaderTextSplitter that only have split_text
-                # and return Document objects directly
-                split_docs = []
-                for doc in documents:
-                    split_results = splitter.split_text(doc.page_content)
-                    # Check if split_text returns Document objects or strings
-                    if split_results and hasattr(split_results[0], 'page_content'):
-                        # Returns Document objects
-                        for split_doc in split_results:
-                            # Merge original metadata with split metadata
-                            merged_metadata = doc.metadata.copy()
-                            merged_metadata.update(split_doc.metadata)
-                            split_doc.metadata = merged_metadata
-                            split_docs.append(split_doc)
-                    else:
-                        # Returns strings
-                        for text in split_results:
-                            split_doc = Document(
-                                page_content=text,
-                                metadata=doc.metadata.copy()
-                            )
-                            split_docs.append(split_doc)
-            
-            self.logger.debug(f"Split into {len(split_docs)} chunks")
-            
-            # Add metadata
-            for doc in split_docs:
-                doc.metadata.update({
-                    'source_url': resource.url,
-                    'resource_type': resource.resource_type,
-                    'priority': resource.priority,
-                    'tags': resource.tags,
-                    'processed_at': time.time(),
-                    **resource.metadata
-                })
-            
-            return split_docs
-            
-        except Exception as e:
-            if self.config.skip_invalid_docs:
-                self.logger.error(f"Failed to process resource {resource.url}: {e}")
-                return []
-            else:
-                raise ProcessingError(f"Failed to process resource {resource.url}: {e}")
-    
-    def add_resources(self, resources: List[ResourceConfig]) -> Dict[str, Any]:
-        """Add multiple resources to the knowledge base."""
+    async def add_resources(self, resources: List[ResourceConfig]) -> Dict[str, Any]:
+        """Add multiple resources to the knowledge base using the processing pipeline."""
         self.logger.info(f"Adding {len(resources)} resources to knowledge base")
         
-        results = {
-            'total_resources': len(resources),
-            'successful': 0,
-            'failed': 0,
-            'total_documents': 0,
-            'errors': []
-        }
+        # Create the processing pipeline
+        pipeline = self._create_processing_pipeline()
         
-        all_documents = []
+        # Use proper async batch processing
+        results = await pipeline.process_batch(resources)
         
-        for i, resource in enumerate(resources, 1):
-            self.logger.progress(f"Processing resource {i}/{len(resources)}: {resource.url}")
-            
-            try:
-                documents = self.process_resource(resource)
-                if documents:
-                    all_documents.extend(documents)
-                    results['total_documents'] += len(documents)
-                    results['successful'] += 1
-                else:
-                    results['failed'] += 1
-                    results['errors'].append(f"No documents from {resource.url}")
-                    
-            except Exception as e:
-                results['failed'] += 1
-                results['errors'].append(f"{resource.url}: {str(e)}")
-                self.logger.error(f"Failed to process {resource.url}: {e}")
-        
-        # Add documents to vectorstore
-        if all_documents:
-            self.logger.info(f"Adding {len(all_documents)} documents to vectorstore")
-            self._add_documents_to_vectorstore(all_documents)
+        # Aggregate results
+        successful = sum(1 for r in results if r.success)
+        total_docs = sum(len(r.context.documents) for r in results if r.success)
+        errors = [r.error for r in results if not r.success and r.error]
         
         self.logger.success(
             f"Completed processing. "
-            f"Successful: {results['successful']}, "
-            f"Failed: {results['failed']}, "
-            f"Total documents: {results['total_documents']}"
+            f"Successful: {successful}, "
+            f"Failed: {len(resources) - successful}, "
+            f"Total documents: {total_docs}"
         )
         
-        return results
-    
-    def _add_documents_to_vectorstore(self, documents: List[Document]) -> None:
-        """Add documents to the vectorstore."""
-        # Filter complex metadata for compatibility with vectorstores like Chroma
-        from langchain_community.vectorstores.utils import filter_complex_metadata
-        filtered_documents = filter_complex_metadata(documents)
-        
-        if not self.vectorstore:
-            # Create new vectorstore
-            self.vectorstore = VectorStoreFactory.create_vectorstore(
-                self.config.vectorstore,
-                self.embeddings,
-                filtered_documents
-            )
-            self.logger.info("Created new vectorstore")
-        else:
-            # Add to existing vectorstore
-            self.vectorstore.add_documents(filtered_documents)
-            self.logger.info(f"Added {len(filtered_documents)} documents to existing vectorstore")
-        
-        # Create/update retriever
-        self.retriever = RetrieverFactory.create_retriever(
-            self.config.retriever,
-            self.vectorstore
-        )
+        return {
+            'total_resources': len(resources),
+            'successful': successful,
+            'failed': len(resources) - successful,
+            'total_documents': total_docs,
+            'errors': errors
+        }
     
     def search(
         self,

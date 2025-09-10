@@ -13,7 +13,7 @@ Key Components:
 - RAGProcessor: Main orchestrator for the entire RAG pipeline
 """
 
-from .config import RAGConfig, ResourceConfig
+from .config import Config, ResourceConfig
 from .pipeline import RAGProcessor, create_resource_from_url, ConfigurationError
 from .loaders import DocumentLoaderFactory
 from .splitters import TextSplitterFactory
@@ -22,7 +22,7 @@ from .vectorstore import VectorStoreFactory
 from .retrievers import RetrieverFactory
 
 __all__ = [
-    'RAGConfig',
+    'Config',
     'ResourceConfig', 
     'RAGProcessor',
     'create_resource_from_url',

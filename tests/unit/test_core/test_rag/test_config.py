@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 
 from src.paas_ai.core.rag.config import (
-    RAGConfig,
+    Config,
     ResourceConfig,
     LoaderType,
     SplitterType,
@@ -20,7 +20,7 @@ from src.paas_ai.core.rag.config import (
 )
 
 
-class TestRAGConfig:
+class TestConfig:
     """Test RAG configuration."""
     
     def test_default_config_creation(self):

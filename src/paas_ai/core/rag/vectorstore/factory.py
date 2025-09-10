@@ -123,7 +123,12 @@ class VectorStoreFactory:
         embeddings: Embeddings
     ) -> Optional[VectorStore]:
         """Load an existing vector store from disk."""
-        if not config.persist_directory or not config.persist_directory.exists():
+        if not config.persist_directory:
+            return None
+            
+        # Handle both string and Path types
+        persist_dir = Path(config.persist_directory)
+        if not persist_dir.exists():
             return None
         
         vectorstore_type = config.type
@@ -134,13 +139,13 @@ class VectorStoreFactory:
                 return Chroma(
                     embedding_function=embeddings,
                     collection_name=config.collection_name,
-                    persist_directory=str(config.persist_directory),
+                    persist_directory=str(persist_dir),
                     **params
                 )
             
             elif vectorstore_type == VectorStoreType.FAISS:
                 return FAISS.load_local(
-                    folder_path=str(config.persist_directory),
+                    folder_path=str(persist_dir),
                     embeddings=embeddings,
                     **params
                 )

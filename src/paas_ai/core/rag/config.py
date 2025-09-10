@@ -146,7 +146,7 @@ class ResourceConfig(BaseModel):
         return v.strip()
 
 
-class RAGConfig(BaseModel):
+class Config(BaseModel):
     """Main configuration for the RAG system."""
     embedding: EmbeddingConfig
     vectorstore: VectorStoreConfig
@@ -165,13 +165,13 @@ class RAGConfig(BaseModel):
     verbose: bool = False
     log_level: str = "INFO"
     
-    class Config:
+    class ConfigMeta:
         use_enum_values = True
 
 
 # Default configuration presets
 DEFAULT_CONFIGS = {
-    "default": RAGConfig(
+    "default": Config(
         embedding=EmbeddingConfig(
             type=EmbeddingType.OPENAI,
             model_name="text-embedding-3-small"
@@ -186,7 +186,7 @@ DEFAULT_CONFIGS = {
         )
     ),
     
-    "local": RAGConfig(
+    "local": Config(
         embedding=EmbeddingConfig(
             type=EmbeddingType.SENTENCE_TRANSFORMERS,
             model_name="all-MiniLM-L6-v2"
@@ -202,7 +202,7 @@ DEFAULT_CONFIGS = {
         )
     ),
     
-    "production": RAGConfig(
+    "production": Config(
         embedding=EmbeddingConfig(
             type=EmbeddingType.OPENAI,
             model_name="text-embedding-3-large"

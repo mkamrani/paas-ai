@@ -1,12 +1,8 @@
 """
-RAG (Retrieval-Augmented Generation) CLI commands.
+RAG (Retrieval Augmented Generation) CLI commands.
 
-This module organizes RAG commands into logical groups across separate files:
-- resources: Resource management (add, remove, list)
-- sync: Synchronization operations
-- status: System status and health
-- search: Knowledge base search
-- reports: Analytics and reporting
+Provides command-line interface for managing RAG knowledge bases,
+including resource management, search functionality, and configuration.
 """
 
 import click
@@ -23,16 +19,22 @@ def rag():
     pass
 
 
-# Import and register subcommand groups
-from .resources import resources
-from .sync import sync
-from .status import status
+# Import and register subcommand groups and commands
+from .resources import resources_group
 from .search import search
-from .reports import report
+from .status import status
+from .sync import sync
+
+__all__ = [
+    'rag',
+    'resources_group', 
+    'search',
+    'status',
+    'sync'
+]
 
 # Add subcommands to the main rag group
-rag.add_command(resources)
-rag.add_command(sync)
-rag.add_command(status)
+rag.add_command(resources_group)
 rag.add_command(search)
-rag.add_command(report) 
+rag.add_command(status)
+rag.add_command(sync) 

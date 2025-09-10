@@ -388,10 +388,15 @@ def deploy(
 
 # Import and register command groups
 from .commands.rag import rag
+from .commands.config import config
 from .commands.mcp import mcp
+from .commands.agent import agent_group
 
+# Add command groups
 cli.add_command(rag)
+cli.add_command(config)
 cli.add_command(mcp)
+cli.add_command(agent_group)
 
 
 def main():

@@ -4,7 +4,7 @@ Configuration schemas for PaaS AI.
 Defines configuration data models for all system components.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -138,6 +138,13 @@ class ValidatorConfig(BaseModel):
     params: Dict[str, Any] = Field(default_factory=dict)
 
 
+class MultiAgentConfig(BaseModel):
+    """Multi-agent system configuration."""
+    enabled: bool = True
+    mode: Literal["supervisor", "swarm"] = "supervisor"
+    default_agent: Literal["designer", "k8s_manifest"] = "designer"
+
+
 class Config(BaseModel):
     """Main configuration for PaaS AI."""
     embedding: EmbeddingConfig
@@ -151,6 +158,21 @@ class Config(BaseModel):
     max_parallel: int = 5
     timeout: int = 30
     log_level: str = "INFO"
+    
+    # Multi-agent system configuration
+    multi_agent: MultiAgentConfig = Field(default_factory=lambda: MultiAgentConfig())
+    agents: Dict[str, Dict[str, Any]] = Field(
+        default_factory=lambda: {
+            "designer": {
+                "model": "gpt-4o-mini",
+                "temperature": 0.1
+            },
+            "k8s_manifest": {
+                "model": "gpt-4o-mini", 
+                "temperature": 0.0  # More deterministic for YAML generation
+            }
+        }
+    )
     
     class Config:
         use_enum_values = True

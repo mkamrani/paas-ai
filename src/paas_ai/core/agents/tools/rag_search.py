@@ -4,10 +4,11 @@ RAG search tool for agent integration.
 
 from typing import Any, Dict, Optional
 from langchain.tools import BaseTool
+from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
 
 from ...rag import RAGProcessor
-from ...config import Config
+from ...config import Config, load_config
 
 
 class RAGSearchInput(BaseModel):
@@ -27,17 +28,35 @@ class RAGSearchTool(BaseTool):
     """
     args_schema: type = RAGSearchInput
     
-    rag_processor: RAGProcessor = Field(exclude=True)
+    def __init__(self):
+        """Initialize the RAG search tool without config dependency."""
+        super().__init__()
     
-    def __init__(self, config: Config):
-        """Initialize the RAG search tool."""
-        super().__init__(rag_processor=RAGProcessor(config))
-    
-    def _run(self, query: str, limit: int = 5, **kwargs) -> str:
-        """Execute the search and return formatted results."""
+    def _run(
+        self, 
+        query: str, 
+        limit: int = 5,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        **kwargs
+    ) -> str:
+        """Execute the search using config from runtime."""
         try:
+            # Get config from runtime or fallback to default
+            config = None
+            if run_manager and hasattr(run_manager, 'config'):
+                # Extract config from runtime
+                configurable = getattr(run_manager.config, 'configurable', {})
+                config = configurable.get('paas_config')
+            
+            if not config:
+                # Fallback to loading default config
+                config = load_config()
+            
+            # Create RAG processor with runtime config
+            rag_processor = RAGProcessor(config)
+            
             # Search the knowledge base
-            results = self.rag_processor.search(
+            results = rag_processor.search(
                 query=query,
                 limit=limit,
                 include_metadata=True

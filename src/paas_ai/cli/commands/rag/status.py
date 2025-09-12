@@ -9,7 +9,7 @@ import json
 
 from ....utils.logging import get_logger
 from ....core.rag import RAGProcessor, ConfigurationError
-from ....core.rag.config import DEFAULT_CONFIGS
+from ....core.config import load_config, DEFAULT_CONFIG_PROFILES
 
 
 @click.command()
@@ -27,8 +27,7 @@ from ....core.rag.config import DEFAULT_CONFIGS
 @click.option(
     '--config-profile',
     type=click.Choice(['default', 'local', 'production']),
-    default='default',
-    help='Configuration profile to use'
+    help='Configuration profile to use (overrides current profile)'
 )
 def status(detailed: bool, format: str, config_profile: str):
     """
@@ -43,8 +42,15 @@ def status(detailed: bool, format: str, config_profile: str):
     logger.set_context("RAG-STATUS")
     
     try:
+        # Load configuration using the profile system
+        if config_profile:
+            # Use specific built-in profile if provided
+            config = DEFAULT_CONFIG_PROFILES[config_profile]
+        else:
+            # Use current active profile from config file/.env
+            config = load_config()
+        
         # Initialize RAG processor
-        config = DEFAULT_CONFIGS[config_profile]
         processor = RAGProcessor(config)
         
         # Get stats

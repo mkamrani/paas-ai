@@ -73,6 +73,14 @@ class GenerateManifestTool(BaseTool):
         **kwargs
     ) -> str:
         """Generate Kubernetes manifest based on specifications."""
+
+        logger.info(f"Generating K8s manifest for {resource_type} in namespace {namespace} with environment {environment}")
+        logger.info(f"Additional config: {additional_config}")
+        logger.info(f"Image: {image}")
+        logger.info(f"Port: {port}")
+        logger.info(f"Replicas: {replicas}")
+        logger.info(f"Namespace: {namespace}")
+        logger.info(f"Environment: {environment}")
         try:
             if resource_type == "deployment":
                 return self._generate_deployment(app_name, image, port, replicas, namespace, environment, additional_config)
@@ -99,7 +107,7 @@ class GenerateManifestTool(BaseTool):
         """Generate a Kubernetes Deployment manifest."""
         resource_requests = self._get_resource_config(environment)
         
-        return f"""# Kubernetes Deployment for {app_name}
+        deployment_manifest = f"""# Kubernetes Deployment for {app_name}
 
 ```yaml
 apiVersion: apps/v1
@@ -110,6 +118,7 @@ metadata:
   labels:
     app: {app_name}
     version: v1
+    platform: paas-ai
     environment: {environment}
   annotations:
     deployment.kubernetes.io/revision: "1"
@@ -230,7 +239,8 @@ spec:
 2. Check rollout status: `kubectl rollout status deployment/{app_name} -n {namespace}`
 3. View pods: `kubectl get pods -l app={app_name} -n {namespace}`
 """
-
+        logger.info(f"Deployment manifest: {deployment_manifest}")
+        return deployment_manifest
     def _generate_service(self, app_name: str, port: int, namespace: str, environment: str, additional_config: Optional[str]) -> str:
         """Generate a Kubernetes Service manifest."""
         return f"""# Kubernetes Service for {app_name}

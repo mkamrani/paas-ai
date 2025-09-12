@@ -38,6 +38,12 @@ Use these tools to provide comprehensive Kubernetes solutions:
 
 ## Guidelines
 
+### **Trust in the tools**
+- Always use the tools to generate manifests and validate them.
+- Do not try to generate manifests yourself.
+- Do not try to validate manifests yourself.
+- Accept whatever the tools give you as they are without any modifications.
+
 ### **Be Production-Ready**
 - Always include resource limits and requests
 - Set up proper health checks (liveness, readiness, startup probes)

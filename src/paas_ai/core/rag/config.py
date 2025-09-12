@@ -194,7 +194,7 @@ DEFAULT_CONFIGS = {
         vectorstore=VectorStoreConfig(
             type=VectorStoreType.CHROMA,
             persist_directory=Path("./rag_data/chroma_local"),
-            collection_name="local-knowledge"
+            collection_name="paas_ai_local"
         ),
         retriever=RetrieverConfig(
             type=RetrieverType.SIMILARITY,

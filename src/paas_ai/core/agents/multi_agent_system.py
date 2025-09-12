@@ -5,29 +5,35 @@ Replaces the single RAGAgent with a system that can operate in supervisor or swa
 """
 
 import os
+import time
+import uuid
 from typing import List, Dict, Any, Optional
 from langchain_core.messages import HumanMessage, BaseMessage
 from langchain_openai import ChatOpenAI
 
 from .base_agent import BaseAgent
 from .tool_registry import ToolRegistry
+from .token_tracking import SessionTokenTracker, TokenCallbackFactory
 from ..config import Config
 from ...utils.logging import get_logger
 
 
 class MultiAgentSystem:
     """
-    Multi-Agent System coordinator - replaces RAGAgent.
+    Multi-Agent System coordinator
     
-    Manages specialized agents in either supervisor or swarm mode while maintaining
-    the same interface as the original RAGAgent for backward compatibility.
+    Manages specialized agents in either supervisor or swarm mode
     """
     
     def __init__(self, config: Config):
         """Initialize the multi-agent system."""
         self.config = config
         self.mode = config.multi_agent.mode
+        self.verbose = config.multi_agent.verbose
         self.logger = get_logger("paas_ai.multi_agent_system")
+        
+        # Initialize token tracking with verbosity
+        self.token_tracker = self._initialize_token_tracker()
         
         # Initialize specialized agents
         self.agents = self._initialize_agents()
@@ -35,7 +41,15 @@ class MultiAgentSystem:
         # Build coordination system based on mode
         self.coordinator = self._build_coordinator()
         
-        self.logger.info(f"MultiAgentSystem initialized in {self.mode} mode with {len(self.agents)} agents")
+        # Log initialization (respects verbosity)
+        if self.verbose:
+            self.logger.info(f"🤖 MultiAgentSystem initialized in {self.mode} mode")
+            self.logger.info(f"📊 Token tracking: {'enabled' if config.multi_agent.track_tokens else 'disabled'}")
+            self.logger.info(f"🔊 Verbose mode: enabled")
+            if config.multi_agent.token_callback:
+                self.logger.info(f"🔗 Token callback: {config.multi_agent.token_callback}")
+        else:
+            self.logger.info(f"MultiAgentSystem initialized in {self.mode} mode with {len(self.agents)} agents")
     
     def _initialize_agents(self) -> Dict[str, BaseAgent]:
         """Initialize all specialized agents."""
@@ -72,6 +86,42 @@ class MultiAgentSystem:
         
         return agents
     
+    def _initialize_token_tracker(self) -> SessionTokenTracker:
+        """Initialize token tracking system with callback support."""
+        config = self.config.multi_agent
+        
+        # Create callback if specified
+        callback = None
+        if config.track_tokens and config.token_callback:
+            # Create callback with appropriate parameters based on type
+            callback_name = config.token_callback
+            if callback_name == "console":
+                callback = TokenCallbackFactory.create_callback(
+                    callback_name,
+                    verbose=self.verbose
+                )
+            elif callback_name == "json_file":
+                callback = TokenCallbackFactory.create_callback(
+                    callback_name,
+                    file_path="token_usage.jsonl"
+                )
+            elif callback_name == "webhook":
+                # Webhook requires URL - skip if not configured properly
+                self.logger.warning("Webhook callback requires webhook_url configuration")
+                callback = None
+            else:
+                # Try to create with no extra parameters
+                callback = TokenCallbackFactory.create_callback(callback_name)
+            
+            if callback is None:
+                self.logger.warning(f"Failed to create token callback: {config.token_callback}")
+        
+        return SessionTokenTracker(
+            enabled=config.track_tokens,
+            callback=callback,
+            verbose=self.verbose
+        )
+    
     def _build_coordinator(self):
         """Build coordination system based on mode."""
         if self.mode == "supervisor":
@@ -103,9 +153,13 @@ class MultiAgentSystem:
             self.logger.info("Supervisor coordination system built successfully")
             return supervisor
             
-        except ImportError:
-            self.logger.warning("langgraph-supervisor not available, falling back to simple routing")
-            return self._build_simple_router()
+        except ImportError as e:
+            error_msg = (
+                "Supervisor mode requires the 'langgraph-supervisor' package. "
+                "Install it with: poetry add langgraph-supervisor"
+            )
+            self.logger.error(error_msg)
+            raise ImportError(error_msg) from e
     
     def _build_swarm(self):
         """Build swarm-based coordination."""
@@ -122,14 +176,13 @@ class MultiAgentSystem:
             self.logger.info("Swarm coordination system built successfully")
             return swarm
             
-        except ImportError:
-            self.logger.warning("langgraph-swarm not available, falling back to simple routing")
-            return self._build_simple_router()
-    
-    def _build_simple_router(self):
-        """Build simple routing fallback when langgraph packages aren't available."""
-        self.logger.info("Using simple routing fallback")
-        return SimpleRouter(self.agents, self.config.multi_agent.default_agent)
+        except ImportError as e:
+            error_msg = (
+                "Swarm mode requires the 'langgraph-swarm' package. "
+                "Install it with: poetry add langgraph-swarm"
+            )
+            self.logger.error(error_msg)
+            raise ImportError(error_msg) from e
     
     def _get_supervisor_model(self) -> ChatOpenAI:
         """Get model for supervisor coordination."""
@@ -174,9 +227,13 @@ You manage two specialized agents:
 
 Analyze user requests and route them to the appropriate specialist agent based on the content:
 - Architecture, design, patterns, diagrams → designer
-- Kubernetes, deployment, YAML, containers → k8s_manifest
+- Kubernetes, manifests, deployment, YAML, containers → k8s_manifest
 
-For complex requests that span both domains, start with the designer agent for architectural planning, then let the workflow continue naturally."""
+For complex requests that span both domains, start with the designer agent for architectural planning, then let the workflow continue naturally.
+
+Assign work to one agent at a time, do not call agents in parallel.
+Do not do any work yourself.
+"""
     
     # === Public API (same as RAGAgent for backward compatibility) ===
     
@@ -190,7 +247,13 @@ For complex requests that span both domains, start with the designer agent for a
         Returns:
             The agent's response
         """
-        self.logger.info(f"Processing question in {self.mode} mode: {question[:100]}...")
+        if self.verbose:
+            self.logger.info(f"🔍 Processing question: {question[:100]}...")
+        else:
+            self.logger.info(f"Processing question in {self.mode} mode: {question[:100]}...")
+        
+        start_time = time.time()
+        request_id = str(uuid.uuid4())
         
         try:
             # Create initial state
@@ -198,10 +261,12 @@ For complex requests that span both domains, start with the designer agent for a
                 "messages": [HumanMessage(content=question)]
             }
             
-            # Add runtime config
+            # Add runtime config with token tracker
             runtime_config = {
                 "configurable": {
-                    "paas_config": self.config
+                    "paas_config": self.config,
+                    "token_tracker": self.token_tracker,
+                    "request_id": request_id
                 }
             }
             
@@ -209,9 +274,27 @@ For complex requests that span both domains, start with the designer agent for a
             result = self.coordinator.invoke(initial_state, config=runtime_config)
             
             # Extract response
-            return self._extract_response(result)
+            response = self._extract_response(result)
+            
+            # Show timing and token info in verbose mode
+            if self.verbose:
+                duration = time.time() - start_time
+                self.logger.info(f"⏱️ Response generated in {duration:.2f}s")
+                
+                # Show token summary if tracking enabled
+                if self.config.multi_agent.track_tokens:
+                    session_summary = self.token_tracker.get_last_request_summary()
+                    if session_summary.get('total_tokens', 0) > 0:
+                        tokens = session_summary['total_tokens']
+                        agent = session_summary.get('agent', 'unknown')
+                        model = session_summary.get('model', 'unknown')
+                        self.logger.info(f"🪙 Token usage: {tokens} tokens ({agent} using {model})")
+            
+            return response
             
         except Exception as e:
+            if self.verbose:
+                self.logger.error(f"❌ Error processing question: {e}")
             error_msg = f"Error processing question: {str(e)}"
             self.logger.error(error_msg)
             return error_msg
@@ -226,14 +309,22 @@ For complex requests that span both domains, start with the designer agent for a
         Returns:
             The agent's response
         """
+        if self.verbose:
+            self.logger.info(f"💬 Processing chat with {len(messages)} messages")
+        
+        start_time = time.time()
+        request_id = str(uuid.uuid4())
+        
         try:
             # Create initial state with conversation history
             initial_state = {"messages": messages}
             
-            # Add runtime config
+            # Add runtime config with token tracker
             runtime_config = {
                 "configurable": {
-                    "paas_config": self.config
+                    "paas_config": self.config,
+                    "token_tracker": self.token_tracker,
+                    "request_id": request_id
                 }
             }
             
@@ -241,9 +332,27 @@ For complex requests that span both domains, start with the designer agent for a
             result = self.coordinator.invoke(initial_state, config=runtime_config)
             
             # Extract response
-            return self._extract_response(result)
+            response = self._extract_response(result)
+            
+            # Show timing and token info in verbose mode
+            if self.verbose:
+                duration = time.time() - start_time
+                self.logger.info(f"⏱️ Chat response generated in {duration:.2f}s")
+                
+                # Show token summary if tracking enabled
+                if self.config.multi_agent.track_tokens:
+                    session_summary = self.token_tracker.get_last_request_summary()
+                    if session_summary.get('total_tokens', 0) > 0:
+                        tokens = session_summary['total_tokens']
+                        agent = session_summary.get('agent', 'unknown')
+                        model = session_summary.get('model', 'unknown')
+                        self.logger.info(f"🪙 Token usage: {tokens} tokens ({agent} using {model})")
+            
+            return response
             
         except Exception as e:
+            if self.verbose:
+                self.logger.error(f"❌ Error in chat: {e}")
             error_msg = f"Error in chat: {str(e)}"
             self.logger.error(error_msg)
             return error_msg
@@ -281,7 +390,10 @@ For complex requests that span both domains, start with the designer agent for a
                 "enabled": True,
                 "mode": self.mode,
                 "agents": list(self.agents.keys()),
-                "default_agent": self.config.multi_agent.default_agent
+                "default_agent": self.config.multi_agent.default_agent,
+                "track_tokens": self.config.multi_agent.track_tokens,
+                "verbose": self.config.multi_agent.verbose,
+                "token_callback": self.config.multi_agent.token_callback
             }
         }
         
@@ -291,6 +403,29 @@ For complex requests that span both domains, start with the designer agent for a
             base_summary["agent_details"][name] = agent.get_config_summary()
         
         return base_summary
+    
+    def get_token_session_summary(self) -> Dict[str, Any]:
+        """
+        Get current token usage session summary.
+        
+        Returns:
+            Dictionary with token usage information including totals, 
+            per-agent breakdown, and session statistics.
+        """
+        return self.token_tracker.get_session_summary()
+    
+    def get_last_token_summary(self) -> Dict[str, Any]:
+        """
+        Get token summary for the last request.
+        
+        Returns:
+            Dictionary with token usage for the most recent operation.
+        """
+        return self.token_tracker.get_last_request_summary()
+    
+    def clear_token_history(self) -> None:
+        """Clear the token usage history for this session."""
+        self.token_tracker.clear()
     
     def _extract_response(self, result: Dict[str, Any]) -> str:
         """Extract the final response from coordination result."""
@@ -303,74 +438,4 @@ For complex requests that span both domains, start with the designer agent for a
         if hasattr(final_message, 'content'):
             return final_message.content
         else:
-            return str(final_message)
-
-
-class SimpleRouter:
-    """
-    Simple fallback router when langgraph coordination packages aren't available.
-    
-    Routes requests to appropriate agents based on keywords and returns responses.
-    """
-    
-    def __init__(self, agents: Dict[str, BaseAgent], default_agent: str):
-        """Initialize simple router."""
-        self.agents = agents
-        self.default_agent = default_agent
-        self.logger = get_logger("paas_ai.simple_router")
-    
-    def invoke(self, state: Dict[str, Any], config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Route request to appropriate agent."""
-        messages = state.get("messages", [])
-        if not messages:
-            return state
-        
-        # Get the user's message
-        user_message = None
-        for msg in reversed(messages):
-            if hasattr(msg, 'content') and isinstance(msg, HumanMessage):
-                user_message = msg.content.lower()
-                break
-        
-        if not user_message:
-            return state
-        
-        # Simple keyword-based routing
-        agent_name = self._route_by_keywords(user_message)
-        
-        self.logger.info(f"Routing to {agent_name} agent")
-        
-        # Invoke the selected agent
-        selected_agent = self.agents[agent_name]
-        result = selected_agent.invoke(state, config)
-        
-        return result
-    
-    def _route_by_keywords(self, message: str) -> str:
-        """Route based on keywords in the message."""
-        # K8s/deployment keywords
-        k8s_keywords = [
-            "kubernetes", "k8s", "kubectl", "deployment", "service", "ingress",
-            "yaml", "manifest", "pod", "container", "docker", "deploy",
-            "scale", "autoscaling", "configmap", "secret", "namespace"
-        ]
-        
-        # Design/architecture keywords
-        design_keywords = [
-            "architecture", "design", "pattern", "mermaid", "diagram",
-            "microservice", "serverless", "event-driven", "system",
-            "scalability", "technology", "stack", "structure"
-        ]
-        
-        # Count keyword matches
-        k8s_score = sum(1 for keyword in k8s_keywords if keyword in message)
-        design_score = sum(1 for keyword in design_keywords if keyword in message)
-        
-        # Route based on highest score
-        if k8s_score > design_score:
-            return "k8s_manifest"
-        elif design_score > 0:
-            return "designer"
-        else:
-            # Default routing
-            return self.default_agent 
+            return str(final_message) 

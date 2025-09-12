@@ -143,6 +143,13 @@ class MultiAgentConfig(BaseModel):
     enabled: bool = True
     mode: Literal["supervisor", "swarm"] = "supervisor"
     default_agent: Literal["designer", "k8s_manifest"] = "designer"
+    
+    # Token tracking with callback support
+    track_tokens: bool = False
+    token_callback: Optional[str] = None  # "console", "json_file", "webhook", etc.
+    
+    # Verbosity control
+    verbose: bool = False  # Controls overall verbosity across the MAS
 
 
 class Config(BaseModel):
@@ -279,5 +286,38 @@ DEFAULT_CONFIG_PROFILES = {
         ),
         batch_size=64,
         validate_urls=True
+    ),
+    
+    "verbose": Config(
+        embedding=EmbeddingConfig(
+            type=EmbeddingType.SENTENCE_TRANSFORMERS,
+            model_name="all-MiniLM-L6-v2"
+        ),
+        vectorstore=VectorStoreConfig(
+            type=VectorStoreType.CHROMA,
+            persist_directory="rag_data/chroma_local",
+            collection_name="paas_ai_local"
+        ),
+        retriever=RetrieverConfig(
+            type=RetrieverType.SIMILARITY,
+            search_kwargs={"k": 5}
+        ),
+        llm=LLMConfig(
+            provider="openai",
+            model_name="gpt-3.5-turbo",
+            temperature=0.0,
+            max_tokens=1000
+        ),
+        batch_size=16,
+        validate_urls=True,
+        # Enable multi-agent verbose mode and token tracking
+        multi_agent=MultiAgentConfig(
+            enabled=True,
+            mode="supervisor",
+            default_agent="designer",
+            track_tokens=True,
+            token_callback="console",
+            verbose=True
+        )
     )
 } 

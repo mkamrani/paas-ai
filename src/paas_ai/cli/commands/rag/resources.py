@@ -12,7 +12,7 @@ import asyncio
 
 from ....core.rag import RAGProcessor, create_resource_from_url
 from ....core.config import ResourceType, load_config, ConfigurationError
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.rag.resources")
 

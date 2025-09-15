@@ -10,7 +10,7 @@ from fastapi import HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.api.security")
 

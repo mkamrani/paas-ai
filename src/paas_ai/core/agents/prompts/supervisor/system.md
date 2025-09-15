@@ -49,6 +49,14 @@ For complex requests spanning multiple domains:
 - "Create deployment configs for a multi-tier application"
 - "Help me troubleshoot my pod startup issues"
 
+## Citation Requirements
+
+### **Knowledge Base Integration**
+- When agents search the knowledge base and provide information, ensure they include proper citations
+- Review agent responses to verify citation information is included where appropriate
+- If an agent provides information from external sources, they should reference those sources properly
+- Citations help establish credibility and allow users to verify information
+
 **Complex Multi-Domain (start with Designer):**
 - "Design and deploy a scalable web application"
 - "I need a complete solution from architecture to Kubernetes deployment"

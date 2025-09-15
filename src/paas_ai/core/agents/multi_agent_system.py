@@ -15,7 +15,7 @@ from .base_agent import BaseAgent
 from .tool_registry import ToolRegistry
 from .token_tracking import SessionTokenTracker, TokenCallbackFactory
 from ..config import Config
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 
 class MultiAgentSystem:

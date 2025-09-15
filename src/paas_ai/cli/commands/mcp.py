@@ -9,7 +9,7 @@ import click
 from pathlib import Path
 from typing import Optional
 
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 
 @click.group()

@@ -28,7 +28,7 @@ from ....core.config import (
     ConfigurationError,
     ConfigFileNotFoundError
 )
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.config")
 

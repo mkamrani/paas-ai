@@ -7,7 +7,7 @@ Show system status and resource health information.
 import click
 import json
 
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 from ....core.rag import RAGProcessor, ConfigurationError
 from ....core.config import load_config, DEFAULT_CONFIG_PROFILES
 

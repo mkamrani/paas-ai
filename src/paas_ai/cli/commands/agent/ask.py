@@ -7,7 +7,7 @@ from typing import Optional
 
 from ....core.config import load_config, ConfigurationError
 from ....core.agents import RAGAgent
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.agent.ask")
 
@@ -21,9 +21,17 @@ def ask_command(question: str, config_profile: Optional[str], show_config: bool)
     try:
         # Load configuration
         if config_profile:
-            logger.warning(f"Config profile override not yet implemented: {config_profile}")
+            # Use the config profiles system like RAG commands
+            from ....core.config.schemas import DEFAULT_CONFIG_PROFILES
+            if config_profile in DEFAULT_CONFIG_PROFILES:
+                config = DEFAULT_CONFIG_PROFILES[config_profile]
+                logger.info(f"Using config profile: {config_profile}")
+            else:
+                logger.warning(f"Unknown config profile '{config_profile}', using default")
+                config = load_config()
+        else:
+            config = load_config()
         
-        config = load_config()
         logger.info(f"Using configuration with {config.embedding.type} embeddings")
         
         # Initialize agent

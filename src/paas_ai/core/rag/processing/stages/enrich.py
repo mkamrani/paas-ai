@@ -46,6 +46,11 @@ class EnrichStage(ProcessingStage):
                 'char_count': len(doc.page_content)
             })
         
+        # Apply citation enrichment if available and enabled
+        citation_enricher = getattr(context, 'citation_enricher', None)
+        if citation_enricher:
+            documents = await citation_enricher(documents, context)
+        
         # Apply custom enrichers
         for enricher in self.custom_enrichers:
             documents = await enricher(documents, context)

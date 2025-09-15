@@ -5,7 +5,7 @@ Main orchestrator for the RAG pipeline that coordinates document loading,
 processing, embedding, and storage following LangChain patterns.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Union
 import asyncio
 import logging
 from urllib.parse import urlparse
@@ -29,7 +29,55 @@ from .retrievers import RetrieverFactory
 from .processing import (
     ProcessingPipeline, ProcessingStage, ProcessingContext
 )
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
+
+
+def convert_main_config_to_rag_config(main_config) -> Config:
+    """Convert main config to RAG config format."""
+    # Import here to avoid circular imports
+    try:
+        from ..config.schemas import Config as MainConfig
+        if isinstance(main_config, MainConfig):
+            # Import RAG config classes
+            from .config import (
+                EmbeddingConfig as RagEmbeddingConfig,
+                VectorStoreConfig as RagVectorStoreConfig,
+                RetrieverConfig as RagRetrieverConfig
+            )
+            
+            # Convert config objects to RAG format by extracting dict values
+            rag_config = Config(
+                embedding=RagEmbeddingConfig(
+                    type=main_config.embedding.type,
+                    model_name=main_config.embedding.model_name,
+                    params=main_config.embedding.params
+                ),
+                vectorstore=RagVectorStoreConfig(
+                    type=main_config.vectorstore.type,
+                    persist_directory=main_config.vectorstore.persist_directory,
+                    collection_name=main_config.vectorstore.collection_name,
+                    params=main_config.vectorstore.params
+                ),
+                retriever=RagRetrieverConfig(
+                    type=main_config.retriever.type,
+                    search_kwargs=main_config.retriever.search_kwargs,
+                    params=main_config.retriever.params
+                ),
+                batch_size=getattr(main_config, 'batch_size', 32),
+                validate_urls=getattr(main_config, 'validate_urls', True),
+                log_level=getattr(main_config, 'log_level', 'INFO')
+            )
+            
+            # Add citation config if available
+            if hasattr(main_config, 'citation') and main_config.citation:
+                rag_config.citation = main_config.citation
+            
+            return rag_config
+    except ImportError:
+        pass
+    
+    # If already RAG config or conversion failed, return as-is
+    return main_config
 
 
 class ValidationError(Exception):
@@ -88,9 +136,10 @@ class VectorStoreStage(ProcessingStage):
 class RAGProcessor:
     """Main RAG pipeline processor."""
     
-    def __init__(self, config: Config):
+    def __init__(self, config: Union[Config, Any]):
         """Initialize the RAG processor with configuration."""
-        self.config = config
+        # Convert main config to RAG config if needed
+        self.config = convert_main_config_to_rag_config(config)
         self.logger = get_logger("paas_ai.rag.pipeline")
         
         # Initialize components with proper error handling
@@ -101,6 +150,18 @@ class RAGProcessor:
             
         self.vectorstore = None
         self.retriever = None
+        
+        # Initialize citation enricher if enabled (use converted config)
+        self.citation_enricher = None
+        if hasattr(self.config, 'citation') and self.config.citation and self.config.citation.enabled:
+            try:
+                from .citations import CitationEnricher
+                self.citation_enricher = CitationEnricher(self.config.citation)
+                self.logger.info(f"Citation system enabled with verbosity: {self.config.citation.verbosity}")
+            except ImportError:
+                self.logger.warning("Citation system requested but citations module not available")
+        elif hasattr(self.config, 'citation') and self.config.citation:
+            self.logger.debug("Citation system available but not enabled")
         
         # Load existing vectorstore if available
         self._load_existing_vectorstore()
@@ -118,7 +179,7 @@ class RAGProcessor:
         
         return pipeline
     
-    def _handle_initialization_error(self, error: Exception, config: Config):
+    def _handle_initialization_error(self, error: Exception, config: Any):
         """Handle initialization errors with helpful messages."""
         error_str = str(error).lower()
         
@@ -230,8 +291,17 @@ class RAGProcessor:
         # Create the processing pipeline
         pipeline = self._create_processing_pipeline()
         
-        # Use proper async batch processing
-        results = await pipeline.process_batch(resources)
+        # Process resources with citation enricher injection
+        results = []
+        for resource in resources:
+            # Create context and inject citation enricher if available
+            context = ProcessingContext(resource=resource)
+            if self.citation_enricher:
+                context.citation_enricher = self.citation_enricher
+            
+            # Process single resource
+            result = await pipeline.process_with_context(context)
+            results.append(result)
         
         # Aggregate results
         successful = sum(1 for r in results if r.success)
@@ -289,12 +359,66 @@ class RAGProcessor:
             }
             
             if include_metadata:
+                # Basic metadata
                 result['metadata'] = {
                     'source_url': doc.metadata.get('source_url'),
                     'resource_type': doc.metadata.get('resource_type'),
                     'tags': doc.metadata.get('tags', []),
                     'priority': doc.metadata.get('priority'),
                 }
+                
+                # Add citation information if available
+                if (doc.metadata.get('citation_enabled') and 
+                    hasattr(self.config, 'citation') and 
+                    self.config.citation and 
+                    self.config.citation.enabled):
+                    from .citations import CitationFormatter
+                    from .citations.models import SourceReference
+                    
+                    # Extract citation reference
+                    citation_ref_data = doc.metadata.get('citation_reference')
+                    if citation_ref_data:
+                        try:
+                            source_ref = SourceReference(**citation_ref_data)
+                            
+                            # Format citation using appropriate strategy
+                            formatter = CitationFormatter()
+                            strategy_name = doc.metadata.get('citation_strategy', 'default_citation')
+                            
+                            formatted_citation = formatter.format_citation(
+                                source_ref=source_ref,
+                                verbosity=self.config.citation.verbosity,
+                                format_style=self.config.citation.format,
+                                strategy_name=strategy_name
+                            )
+                            
+                            # Add citation information to result
+                            result['citation'] = {
+                                'formatted': formatted_citation,
+                                'source_reference': citation_ref_data,
+                                'verbosity': doc.metadata.get('citation_verbosity'),
+                                'strategy': strategy_name
+                            }
+                            
+                            # Add citation link if available
+                            strategy_registry = getattr(self, '_citation_strategy_registry', None)
+                            if not strategy_registry:
+                                from .citations.strategies import CitationStrategyRegistry
+                                self._citation_strategy_registry = CitationStrategyRegistry()
+                                strategy_registry = self._citation_strategy_registry
+                            
+                            strategy = strategy_registry.get_strategy(strategy_name)
+                            citation_link = strategy.generate_citation_link(source_ref)
+                            if citation_link:
+                                result['citation']['link'] = citation_link
+                                
+                        except Exception as e:
+                            self.logger.warning(f"Failed to format citation: {e}")
+                            # Add basic citation fallback
+                            result['citation'] = {
+                                'formatted': f"[{doc.metadata.get('source_url', 'Unknown source')}]",
+                                'error': str(e)
+                            }
             
             results.append(result)
         

@@ -368,11 +368,19 @@ def list_available_profiles(include_custom: bool = True) -> Dict[str, str]:
     Returns:
         Dict[str, str]: Profile name to description mapping
     """
-    profiles = {
-        'default': 'OpenAI embeddings + Chroma vector store',
-        'local': 'SentenceTransformers + Chroma (no API keys required)',
-        'production': 'OpenAI large embeddings + Pinecone + ensemble retrieval'
-    }
+    # Get all built-in profiles from DEFAULT_CONFIG_PROFILES
+    profiles = {}
+    for name, config in DEFAULT_CONFIG_PROFILES.items():
+        if name == 'default':
+            profiles[name] = 'OpenAI embeddings + Chroma vector store'
+        elif name == 'local':
+            profiles[name] = 'SentenceTransformers + Chroma (no API keys required)'
+        elif name == 'production':
+            profiles[name] = 'OpenAI large embeddings + Pinecone + ensemble retrieval'
+        elif name == 'verbose':
+            profiles[name] = 'Verbose mode with token tracking enabled'
+        else:
+            profiles[name] = f'Built-in profile: {name}'
     
     if include_custom:
         try:

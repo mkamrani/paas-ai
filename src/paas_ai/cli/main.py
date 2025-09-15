@@ -10,7 +10,7 @@ import click
 from typing import Optional
 from pathlib import Path
 
-from ..utils.logging import get_logger, PaaSLogger
+from paas_ai.utils.logging import get_logger, PaaSLogger
 
 
 # Global CLI configuration

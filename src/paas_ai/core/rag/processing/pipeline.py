@@ -34,6 +34,38 @@ class ProcessingPipeline:
         else:
             return NotImplemented
     
+    async def process_with_context(self, context: ProcessingContext) -> ProcessingResult:
+        """Process using an existing context (allows for pre-injection of enrichers)."""
+        
+        print(f"Starting pipeline '{self.name}' for resource: {context.resource.url}")
+        
+        try:
+            # Execute each stage in sequence
+            for stage in self.stages:
+                print(f"Executing stage: {stage.name}")
+                context = await stage(context)
+                
+                # Log progress
+                metric = context.get_metric(stage.name)
+                if metric:
+                    print(f"Stage '{stage.name}' completed: "
+                          f"{metric.input_count} → {metric.output_count} documents "
+                          f"in {metric.duration:.2f}s")
+            
+            total_duration = sum(m.duration or 0 for m in context.metrics)
+            print(f"Pipeline completed: {len(context.documents)} documents processed "
+                  f"in {total_duration:.2f}s")
+            
+            return ProcessingResult(context=context, success=True)
+            
+        except Exception as e:
+            print(f"Pipeline failed: {e}")
+            return ProcessingResult(
+                context=context, 
+                success=False, 
+                error=str(e)
+            )
+    
     async def process(self, resource: ResourceConfig) -> ProcessingResult:
         """Process a single resource through the pipeline."""
         context = ProcessingContext(resource=resource)

@@ -10,7 +10,7 @@ from langgraph.prebuilt import InjectedState
 from langgraph.graph import MessagesState
 from langgraph.types import Command
 
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.agents.handoff_tools")
 

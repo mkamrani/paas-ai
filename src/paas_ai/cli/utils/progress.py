@@ -21,7 +21,7 @@ from rich.progress import (
 )
 from rich.status import Status
 
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 console = Console()
 logger = get_logger("paas_ai.cli.progress")

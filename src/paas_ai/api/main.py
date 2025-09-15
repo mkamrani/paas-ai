@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .models import ErrorResponse, HealthStatus
 from .middleware import setup_cors, setup_request_logging, setup_security
 from .routers import agent
-from ..utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.api")
 

@@ -11,11 +11,12 @@ from ..config import LoaderConfig
 
 
 class WebLoaderStrategy(LoaderStrategy):
-    """Strategy for loading web documents."""
+    """Strategy for loading web documents with citation-friendly metadata."""
     
     def create_loader(self, config: LoaderConfig, url: str) -> BaseLoader:
-        """Create a web document loader."""
+        """Create a web document loader with enhanced metadata extraction."""
         params = config.params.copy()
+        
         return WebBaseLoader(
             web_paths=[url],
             **params

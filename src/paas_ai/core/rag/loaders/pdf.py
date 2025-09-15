@@ -12,15 +12,19 @@ from ..config import LoaderConfig
 
 
 class PDFLoaderStrategy(LoaderStrategy):
-    """Strategy for loading PDF documents."""
+    """Strategy for loading PDF documents with citation-friendly metadata."""
     
     def create_loader(self, config: LoaderConfig, url: str) -> BaseLoader:
-        """Create a PDF document loader."""
+        """Create a PDF document loader with enhanced metadata extraction."""
         params = config.params.copy()
-        return PyPDFLoader(
+        
+        # Use PyPDFLoader which preserves page numbers
+        loader = PyPDFLoader(
             file_path=url,
             **params
         )
+        
+        return loader
     
     def validate_config(self, config: LoaderConfig, url: str) -> None:
         """Validate PDF loader configuration."""

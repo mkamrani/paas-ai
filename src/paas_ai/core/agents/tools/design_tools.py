@@ -9,7 +9,7 @@ from langchain.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
 
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.agents.design_tools")
 

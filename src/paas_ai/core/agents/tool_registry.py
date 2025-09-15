@@ -6,7 +6,7 @@ Provides centralized tool management with name-based lookup and runtime config a
 
 from typing import Dict, Type, List, Optional, Any
 from langchain.tools import BaseTool
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.agents.tool_registry")
 

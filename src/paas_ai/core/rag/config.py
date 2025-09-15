@@ -10,6 +10,17 @@ from pydantic import BaseModel, Field, validator
 from enum import Enum
 from pathlib import Path
 
+# Import citation-related enums and configs from main config
+try:
+    from ..config.schemas import CitationConfig, CitationVerbosity, CitationFormat, ResourceType as MainResourceType
+    _CITATION_AVAILABLE = True
+except ImportError:
+    _CITATION_AVAILABLE = False
+    CitationConfig = None
+    CitationVerbosity = None 
+    CitationFormat = None
+    MainResourceType = None
+
 
 class LoaderType(str, Enum):
     """Supported document loader types."""
@@ -151,6 +162,11 @@ class Config(BaseModel):
     embedding: EmbeddingConfig
     vectorstore: VectorStoreConfig
     retriever: RetrieverConfig
+    
+    # Citation configuration (optional for backward compatibility)
+    citation: Optional[CitationConfig] = Field(
+        default_factory=lambda: CitationConfig() if _CITATION_AVAILABLE else None
+    )
     
     # Pipeline settings
     batch_size: int = Field(default=32, ge=1)

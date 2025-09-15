@@ -72,6 +72,23 @@ class ContentValidatorType(str, Enum):
     CONTENT = "content"
 
 
+class CitationVerbosity(str, Enum):
+    """Citation verbosity levels."""
+    NONE = "none"        # No citations (current behavior)
+    MINIMAL = "minimal"  # Just source name
+    STANDARD = "standard"  # Source + location (page/section)
+    DETAILED = "detailed"  # Full reference with context
+    FORENSIC = "forensic"  # Exact quotes + precise locations
+
+
+class CitationFormat(str, Enum):
+    """Citation output formats."""
+    INLINE = "inline"      # [Source, Page 5]
+    FOOTNOTE = "footnote"  # Reference number with footnote
+    ACADEMIC = "academic"  # Full academic citation
+    STRUCTURED = "structured"  # JSON/dict format
+
+
 # Configuration models
 class EmbeddingConfig(BaseModel):
     type: EmbeddingType
@@ -115,11 +132,47 @@ class SplitterConfig(BaseModel):
 
 
 class ContentValidatorConfig(BaseModel):
+    """Configuration for content validators."""
     type: ContentValidatorType
     min_content_length: int = 10
     max_content_length: int = 1000000
     skip_empty: bool = True
     params: Dict[str, Any] = Field(default_factory=dict)
+    
+    class Config:
+        use_enum_values = True
+
+
+class CitationConfig(BaseModel):
+    """Citation system configuration."""
+    enabled: bool = True
+    verbosity: CitationVerbosity = CitationVerbosity.STANDARD
+    format: CitationFormat = CitationFormat.INLINE
+    
+    # Resource-specific verbosity overrides
+    resource_overrides: Dict[ResourceType, CitationVerbosity] = Field(default_factory=dict)
+    
+    # Citation content preferences
+    include_quotes: bool = True
+    max_quote_length: int = 150
+    include_confidence: bool = False
+    generate_deep_links: bool = True
+    
+    # Strategy mapping per resource type
+    strategies: Dict[ResourceType, str] = Field(
+        default_factory=lambda: {
+            ResourceType.DSL: "technical_citation",
+            ResourceType.CONTEXTUAL: "web_citation",
+            ResourceType.GUIDELINES: "policy_citation",
+            ResourceType.DOMAIN_RULES: "rule_citation"
+        }
+    )
+    
+    # Base URLs for deep link generation
+    base_urls: Dict[str, str] = Field(default_factory=dict)
+    
+    class Config:
+        use_enum_values = True
 
 
 class ResourceConfig(BaseModel):
@@ -160,6 +213,7 @@ class Config(BaseModel):
     llm: LLMConfig = Field(default_factory=lambda: LLMConfig())
     loader: Optional[LoaderConfig] = None
     content_validator: Optional[ContentValidatorConfig] = None
+    citation: CitationConfig = Field(default_factory=lambda: CitationConfig())
     batch_size: int = 32
     validate_urls: bool = True
     max_parallel: int = 5
@@ -237,6 +291,11 @@ DEFAULT_CONFIG_PROFILES = {
             model_name="gpt-3.5-turbo",
             temperature=0.1
         ),
+        citation=CitationConfig(
+            enabled=True,
+            verbosity=CitationVerbosity.STANDARD,
+            format=CitationFormat.INLINE
+        ),
         batch_size=32,
         validate_urls=True
     ),
@@ -261,6 +320,11 @@ DEFAULT_CONFIG_PROFILES = {
             temperature=0.0,  # More deterministic for local testing
             max_tokens=1000
         ),
+        citation=CitationConfig(
+            enabled=True,
+            verbosity=CitationVerbosity.MINIMAL,
+            format=CitationFormat.INLINE
+        ),
         batch_size=16,
         validate_urls=True
     ),
@@ -283,6 +347,16 @@ DEFAULT_CONFIG_PROFILES = {
             model_name="gpt-4",
             temperature=0.2,
             max_tokens=2000
+        ),
+        citation=CitationConfig(
+            enabled=True,
+            verbosity=CitationVerbosity.DETAILED,
+            format=CitationFormat.INLINE,
+            include_confidence=True,
+            resource_overrides={
+                ResourceType.DSL: CitationVerbosity.FORENSIC,
+                ResourceType.GUIDELINES: CitationVerbosity.DETAILED
+            }
         ),
         batch_size=64,
         validate_urls=True
@@ -307,6 +381,14 @@ DEFAULT_CONFIG_PROFILES = {
             model_name="gpt-3.5-turbo",
             temperature=0.0,
             max_tokens=1000
+        ),
+        citation=CitationConfig(
+            enabled=True,
+            verbosity=CitationVerbosity.FORENSIC,
+            format=CitationFormat.STRUCTURED,
+            include_quotes=True,
+            include_confidence=True,
+            max_quote_length=200
         ),
         batch_size=16,
         validate_urls=True,

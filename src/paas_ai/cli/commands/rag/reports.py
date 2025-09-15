@@ -6,7 +6,7 @@ Generate reports and analytics about the RAG system.
 
 import click
 
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 
 @click.group()

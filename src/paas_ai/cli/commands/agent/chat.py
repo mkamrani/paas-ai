@@ -7,7 +7,7 @@ from typing import Optional
 
 from ....core.config import load_config, ConfigurationError
 from ....core.agents import RAGAgent
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.agent.chat")
 
@@ -50,21 +50,18 @@ def chat_command(config_profile: Optional[str], show_config: bool, max_history: 
         
         # Load configuration with profile override
         if config_profile:
-            # Temporarily set environment variable to override profile
-            import os
-            original_profile = os.environ.get('PAAS_AI_PROFILE')
-            os.environ['PAAS_AI_PROFILE'] = config_profile
-            logger.info(f"Using config profile: {config_profile}")
-        
-        config = load_config()
-        logger.info(f"Using configuration with {config.embedding.type} embeddings")
-        
-        # Restore original profile environment variable
-        if config_profile:
-            if original_profile is not None:
-                os.environ['PAAS_AI_PROFILE'] = original_profile
+            # Use the config profiles system like RAG commands
+            from ....core.config.schemas import DEFAULT_CONFIG_PROFILES
+            if config_profile in DEFAULT_CONFIG_PROFILES:
+                config = DEFAULT_CONFIG_PROFILES[config_profile]
+                logger.info(f"Using config profile: {config_profile}")
             else:
-                os.environ.pop('PAAS_AI_PROFILE', None)
+                logger.warning(f"Unknown config profile '{config_profile}', using default")
+                config = load_config()
+        else:
+            config = load_config()
+        
+        logger.info(f"Using configuration with {config.embedding.type} embeddings")
         
         # Initialize agent
         agent = RAGAgent(config)

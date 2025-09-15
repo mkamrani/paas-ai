@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any, Type, Protocol
 from pathlib import Path
 
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.agents.token_tracking")
 

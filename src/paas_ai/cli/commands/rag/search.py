@@ -7,9 +7,9 @@ Search the knowledge base for relevant information.
 import click
 import json
 
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 from ....core.rag import RAGProcessor, ConfigurationError
-from ....core.rag.config import DEFAULT_CONFIGS, ResourceType
+from ....core.config.schemas import DEFAULT_CONFIG_PROFILES, ResourceType
 
 
 @click.command()
@@ -34,7 +34,7 @@ from ....core.rag.config import DEFAULT_CONFIGS, ResourceType
 )
 @click.option(
     '--config-profile',
-    type=click.Choice(['default', 'local', 'production']),
+    type=click.Choice(['default', 'local', 'production', 'citation_demo']),
     default='default',
     help='Configuration profile to use'
 )
@@ -55,7 +55,7 @@ def search(query: str, resource_type: str, limit: int, format: str, config_profi
         logger.debug(f"Resource type: {resource_type}, Limit: {limit}")
         
         # Initialize RAG processor
-        config = DEFAULT_CONFIGS[config_profile]
+        config = DEFAULT_CONFIG_PROFILES[config_profile]
         processor = RAGProcessor(config)
         
         # Check if knowledge base is available

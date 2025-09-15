@@ -13,7 +13,7 @@ from langgraph.prebuilt import create_react_agent
 from .tool_registry import ToolRegistry
 # Removed unused import
 from ..config import Config
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 
 class BaseAgent:

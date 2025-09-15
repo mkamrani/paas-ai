@@ -23,7 +23,7 @@ from ..models import (
 from ..middleware.security import APIKeyAuth
 from ...core.config import load_config, Config
 from ...core.agents import RAGAgent
-from ...utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.api.agent")
 router = APIRouter(prefix="/agent", tags=["agent"])

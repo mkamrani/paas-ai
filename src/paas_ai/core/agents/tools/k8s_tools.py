@@ -10,7 +10,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel, Field
 import yaml
 
-from ....utils.logging import get_logger
+from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.agents.k8s_tools")
 

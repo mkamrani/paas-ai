@@ -46,6 +46,8 @@ dependencies = [
     
     # Type checking utilities
     "typing-extensions>=4.8.0",
+    "langgraph-supervisor (>=0.0.29,<0.0.30)",
+    "langgraph-swarm (>=0.0.14,<0.0.15)",
 ]
 
 # Optional dependencies for different components
@@ -88,6 +90,7 @@ rag = [
 # Agent framework dependencies
 agent = [
     "langgraph>=0.0.20",       # LangGraph for agent workflows
+    "langgraph-supervisor>=0.0.29",  # LangGraph supervisor for multi-agent coordination
     "langchain>=0.1.0",        # LangChain base
     "langchain-openai>=0.0.2", # OpenAI integration
     "langchain-anthropic>=0.1.0", # Anthropic integration
@@ -152,6 +155,7 @@ all = [
     
     # Agent dependencies  
     "langgraph>=0.0.20",
+    "langgraph-supervisor>=0.0.29",
     "langchain-openai>=0.0.2",
     
     # MCP dependencies

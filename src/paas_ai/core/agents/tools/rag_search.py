@@ -9,6 +9,9 @@ from pydantic import BaseModel, Field
 
 from ...rag import RAGProcessor
 from ...config import Config, load_config
+from paas_ai.utils.logging import get_logger
+
+logger = get_logger("paas_ai.agents.rag_search")
 
 
 class RAGSearchInput(BaseModel):
@@ -41,6 +44,7 @@ class RAGSearchTool(BaseTool):
     ) -> str:
         """Execute the search using config from runtime."""
         try:
+            # logger.info(f"Running RAG Search Tool with query: {query} and limit: {limit}")
             # Get config from runtime or fallback to default
             config = None
             if run_manager and hasattr(run_manager, 'config'):
@@ -51,6 +55,8 @@ class RAGSearchTool(BaseTool):
             if not config:
                 # Fallback to loading default config
                 config = load_config()
+
+            # logger.info(f"Config: {config}")
             
             # Create RAG processor with runtime config
             rag_processor = RAGProcessor(config)
@@ -61,6 +67,8 @@ class RAGSearchTool(BaseTool):
                 limit=limit,
                 include_metadata=True
             )
+
+            logger.info(f"Rag Processor Raw Results: {results}")
             
             if not results:
                 return f"No information found for query: '{query}'"
@@ -72,15 +80,36 @@ class RAGSearchTool(BaseTool):
                 score = result.get('score', 0.0)
                 source = result.get('metadata', {}).get('source_url', 'Unknown')
                 
-                formatted_results.append(
-                    f"Result {i} (score: {score:.2f}):\n"
-                    f"Source: {source}\n"
-                    f"Content: {content}\n"
-                )
+                # Build result string with citation if available
+                result_parts = [
+                    f"Result {i} (score: {score:.2f}):",
+                    f"Content: {content}"
+                ]
+                
+                # Add citation information if available
+                citation_info = result.get('citation')
+                if citation_info:
+                    formatted_citation = citation_info.get('formatted', '')
+                    if formatted_citation:
+                        result_parts.insert(1, f"Citation: {formatted_citation}")
+                        
+                        # Add link if available
+                        citation_link = citation_info.get('link')
+                        if citation_link:
+                            result_parts.append(f"Link: {citation_link}")
+                    else:
+                        # Fallback to basic source
+                        result_parts.insert(1, f"Source: {source}")
+                else:
+                    # No citation available, use basic source
+                    result_parts.insert(1, f"Source: {source}")
+                
+                formatted_results.append("\n".join(result_parts))
             
-            return "\n".join(formatted_results)
+            return "\n\n".join(formatted_results)
             
         except Exception as e:
+            logger.error(f"Error searching knowledge base: {str(e)}")
             return f"Error searching knowledge base: {str(e)}"
     
     async def _arun(self, query: str, limit: int = 5, **kwargs) -> str:

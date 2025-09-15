@@ -242,7 +242,6 @@ files = [
     {file = "anyio-4.10.0-py3-none-any.whl", hash = "sha256:60e474ac86736bbfd6f210f7a61218939c318f43f9972497381f1c5e930ed3d1"},
     {file = "anyio-4.10.0.tar.gz", hash = "sha256:3f3fae35c96039744587aa5b8371e7e8e603c0702999535961dd336026973ba6"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\" or extra == \"mcp\" or extra == \"api\""}
 
 [package.dependencies]
 idna = ">=2.8"
@@ -687,7 +686,6 @@ files = [
     {file = "certifi-2025.8.3-py3-none-any.whl", hash = "sha256:f6c12493cfb1b06ba2ff328595af9350c65d6644968e5d3a2ffd78699af217a5"},
     {file = "certifi-2025.8.3.tar.gz", hash = "sha256:e564105f78ded564e3ae7c923924435e1daa7463faeab5bb932bc53ffae63407"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"integrations\" or extra == \"agent\" or extra == \"mcp\""}
 
 [[package]]
 name = "cffi"
@@ -858,7 +856,6 @@ files = [
     {file = "charset_normalizer-3.4.3-py3-none-any.whl", hash = "sha256:ce571ab16d890d23b5c278547ba694193a45011ff86a9162a71307ed9f86759a"},
     {file = "charset_normalizer-3.4.3.tar.gz", hash = "sha256:6fce4b8500244f6fcb71465d4a4930d132ba9ab8e71a7859e6a5d59851068d14"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"integrations\" or extra == \"agent\""}
 
 [[package]]
 name = "chromadb"
@@ -1940,7 +1937,6 @@ files = [
     {file = "h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"},
     {file = "h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1"},
 ]
-markers = {main = "extra == \"mcp\" or extra == \"rag\" or extra == \"all\" or extra == \"api\" or extra == \"agent\""}
 
 [[package]]
 name = "h2"
@@ -2052,7 +2048,6 @@ files = [
     {file = "httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55"},
     {file = "httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\" or extra == \"mcp\""}
 
 [package.dependencies]
 certifi = "*"
@@ -2132,7 +2127,6 @@ files = [
     {file = "httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"},
     {file = "httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\" or extra == \"mcp\""}
 
 [package.dependencies]
 anyio = "*"
@@ -2241,7 +2235,6 @@ files = [
     {file = "idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"},
     {file = "idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\" or extra == \"mcp\" or extra == \"api\" or extra == \"integrations\""}
 
 [package.extras]
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
@@ -2478,7 +2471,6 @@ files = [
     {file = "jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade"},
     {file = "jsonpatch-1.33.tar.gz", hash = "sha256:9fcd4009c41e6d12348b4a0ff2563ba56a2923a7dfee731d004e212e1ee5030c"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [package.dependencies]
 jsonpointer = ">=1.9"
@@ -2494,7 +2486,6 @@ files = [
     {file = "jsonpointer-3.0.0-py2.py3-none-any.whl", hash = "sha256:13e088adc14fca8b6aa8177c044e12701e6ad4b28ff10e65f2267a90109c9942"},
     {file = "jsonpointer-3.0.0.tar.gz", hash = "sha256:2b2d729f2091522d61c3b31f82e11870f60b68f43fbc705cb76bf4b832af59ef"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [[package]]
 name = "jsonschema"
@@ -2694,7 +2685,6 @@ files = [
     {file = "langchain_core-0.3.75-py3-none-any.whl", hash = "sha256:03ca1fadf955ee3c7d5806a841f4b3a37b816acea5e61a7e6ba1298c05eea7f5"},
     {file = "langchain_core-0.3.75.tar.gz", hash = "sha256:ab0eb95a06ed6043f76162e6086b45037690cb70b7f090bd83b5ebb8a05b70ed"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [package.dependencies]
 jsonpatch = ">=1.33,<2.0"
@@ -2758,10 +2748,9 @@ six = "*"
 name = "langgraph"
 version = "0.6.7"
 description = "Building stateful, multi-actor applications with LLMs"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"agent\" or extra == \"all\""
 files = [
     {file = "langgraph-0.6.7-py3-none-any.whl", hash = "sha256:c724dd8c24806b70faf4903e8e20c0234f8c0a356e0e96a88035cbecca9df2cf"},
     {file = "langgraph-0.6.7.tar.gz", hash = "sha256:ba7fd17b8220142d6a4269b6038f2b3dcbcef42cd5ecf4a4c8d9b60b010830a6"},
@@ -2779,10 +2768,9 @@ xxhash = ">=3.5.0"
 name = "langgraph-checkpoint"
 version = "2.1.1"
 description = "Library with base interfaces for LangGraph checkpoint savers."
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"agent\" or extra == \"all\""
 files = [
     {file = "langgraph_checkpoint-2.1.1-py3-none-any.whl", hash = "sha256:5a779134fd28134a9a83d078be4450bbf0e0c79fdf5e992549658899e6fc5ea7"},
     {file = "langgraph_checkpoint-2.1.1.tar.gz", hash = "sha256:72038c0f9e22260cb9bff1f3ebe5eb06d940b7ee5c1e4765019269d4f21cf92d"},
@@ -2796,10 +2784,9 @@ ormsgpack = ">=1.10.0"
 name = "langgraph-prebuilt"
 version = "0.6.4"
 description = "Library with high-level APIs for creating and executing LangGraph agents and tools."
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"agent\" or extra == \"all\""
 files = [
     {file = "langgraph_prebuilt-0.6.4-py3-none-any.whl", hash = "sha256:819f31d88b84cb2729ff1b79db2d51e9506b8fb7aaacfc0d359d4fe16e717344"},
     {file = "langgraph_prebuilt-0.6.4.tar.gz", hash = "sha256:e9e53b906ee5df46541d1dc5303239e815d3ec551e52bb03dd6463acc79ec28f"},
@@ -2813,10 +2800,9 @@ langgraph-checkpoint = ">=2.1.0,<3.0.0"
 name = "langgraph-sdk"
 version = "0.2.6"
 description = "SDK for interacting with LangGraph API"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"agent\" or extra == \"all\""
 files = [
     {file = "langgraph_sdk-0.2.6-py3-none-any.whl", hash = "sha256:477216b573b8177bbd849f4c754782a81279fbbd88bfadfeda44422d14b18b08"},
     {file = "langgraph_sdk-0.2.6.tar.gz", hash = "sha256:7db27cd86d1231fa614823ff416fcd2541b5565ad78ae950f31ae96d7af7c519"},
@@ -2825,6 +2811,38 @@ files = [
 [package.dependencies]
 httpx = ">=0.25.2"
 orjson = ">=3.10.1"
+
+[[package]]
+name = "langgraph-supervisor"
+version = "0.0.29"
+description = "An implementation of a supervisor multi-agent architecture using LangGraph"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "langgraph_supervisor-0.0.29-py3-none-any.whl", hash = "sha256:611dd4545f566f690d30004af3742887ec78134921118706ae7eeb12ce77763d"},
+    {file = "langgraph_supervisor-0.0.29.tar.gz", hash = "sha256:0ab6e06e102096071d605268a4138084b87128f0c965e1544f77a7d4f65ca16b"},
+]
+
+[package.dependencies]
+langchain-core = ">=0.3.40"
+langgraph = ">=0.6.0,<0.7.0"
+
+[[package]]
+name = "langgraph-swarm"
+version = "0.0.14"
+description = "An implementation of a multi-agent swarm using LangGraph"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "langgraph_swarm-0.0.14-py3-none-any.whl", hash = "sha256:dff76798d8d2bc2b6cf89bcb02027aeede8c595b9487364ae023a2627f97c48c"},
+    {file = "langgraph_swarm-0.0.14.tar.gz", hash = "sha256:fa780e8c8b3431349dd314717dfc439c923b7568c7212c9f41f0b348d7c022b0"},
+]
+
+[package.dependencies]
+langchain-core = ">=0.3.40,<0.4.0"
+langgraph = ">=0.6.0,<0.7.0"
 
 [[package]]
 name = "langsmith"
@@ -2837,7 +2855,6 @@ files = [
     {file = "langsmith-0.4.25-py3-none-any.whl", hash = "sha256:adb61784ff58e65f0290ba45770626219fb06a776e69fbcf98aec580478b4686"},
     {file = "langsmith-0.4.25.tar.gz", hash = "sha256:56f0c45810384fba37582ca17fdbcf6ead51934d26d72672e5a810452c0d4ae3"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [package.dependencies]
 httpx = ">=0.23.0,<1"
@@ -4282,16 +4299,14 @@ files = [
     {file = "orjson-3.11.3-cp39-cp39-win_amd64.whl", hash = "sha256:215c595c792a87d4407cb72dd5e0f6ee8e694ceeb7f9102b533c5a9bf2a916bb"},
     {file = "orjson-3.11.3.tar.gz", hash = "sha256:1c0603b1d2ffcd43a411d64797a19556ef76958aef1c182f22dc30860152a98a"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [[package]]
 name = "ormsgpack"
 version = "1.10.0"
 description = "Fast, correct Python msgpack library supporting dataclasses, datetimes, and numpy"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"agent\" or extra == \"all\""
 files = [
     {file = "ormsgpack-1.10.0-cp310-cp310-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:8a52c7ce7659459f3dc8dec9fd6a6c76f855a0a7e2b61f26090982ac10b95216"},
     {file = "ormsgpack-1.10.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:060f67fe927582f4f63a1260726d019204b72f460cf20930e6c925a1d129f373"},
@@ -4376,7 +4391,6 @@ files = [
     {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
     {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\" or extra == \"dev\""}
 
 [[package]]
 name = "parse"
@@ -6040,7 +6054,6 @@ files = [
     {file = "requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6"},
     {file = "requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"integrations\" or extra == \"agent\""}
 
 [package.dependencies]
 certifi = ">=2017.4.17"
@@ -6121,7 +6134,6 @@ files = [
     {file = "requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6"},
     {file = "requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [package.dependencies]
 requests = ">=2.0.1,<3.0.0"
@@ -6633,7 +6645,6 @@ files = [
     {file = "sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"},
     {file = "sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\" or extra == \"mcp\" or extra == \"api\""}
 
 [[package]]
 name = "sortedcontainers"
@@ -6830,7 +6841,6 @@ files = [
     {file = "tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138"},
     {file = "tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"all\" or extra == \"agent\""}
 
 [package.extras]
 doc = ["reno", "sphinx"]
@@ -7416,7 +7426,6 @@ files = [
     {file = "urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc"},
     {file = "urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760"},
 ]
-markers = {main = "extra == \"integrations\" or extra == \"rag\" or extra == \"all\" or extra == \"agent\""}
 
 [package.dependencies]
 pysocks = {version = ">=1.5.6,<1.5.7 || >1.5.7,<2.0", optional = true, markers = "extra == \"socks\""}
@@ -7875,10 +7884,9 @@ files = [
 name = "xxhash"
 version = "3.5.0"
 description = "Python binding for xxHash"
-optional = true
+optional = false
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "extra == \"agent\" or extra == \"all\""
 files = [
     {file = "xxhash-3.5.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ece616532c499ee9afbb83078b1b952beffef121d989841f7f4b3dc5ac0fd212"},
     {file = "xxhash-3.5.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3171f693dbc2cef6477054a665dc255d996646b4023fe56cb4db80e26f4cc520"},
@@ -8254,14 +8262,13 @@ files = [
     {file = "zstandard-0.24.0-cp39-cp39-win_amd64.whl", hash = "sha256:8ecd3b1f7a601f79e0cd20c26057d770219c0dc2f572ea07390248da2def79a4"},
     {file = "zstandard-0.24.0.tar.gz", hash = "sha256:fe3198b81c00032326342d973e526803f183f97aa9e9a98e3f897ebafe21178f"},
 ]
-markers = {main = "extra == \"rag\" or extra == \"agent\" or extra == \"all\""}
 
 [package.extras]
 cffi = ["cffi (>=1.17) ; python_version >= \"3.13\" and platform_python_implementation != \"PyPy\""]
 
 [extras]
-agent = ["langchain", "langchain-anthropic", "langchain-openai", "langgraph"]
-all = ["atlassian-python-api", "beautifulsoup4", "chromadb", "fastapi", "kubernetes", "langchain", "langchain-openai", "langgraph", "openai", "psutil", "qdrant-client", "rank-bm25", "sentence-transformers", "sqlalchemy", "uvicorn", "websockets"]
+agent = ["langchain", "langchain-anthropic", "langchain-openai", "langgraph", "langgraph-supervisor"]
+all = ["atlassian-python-api", "beautifulsoup4", "chromadb", "fastapi", "kubernetes", "langchain", "langchain-openai", "langgraph", "langgraph-supervisor", "openai", "psutil", "qdrant-client", "rank-bm25", "sentence-transformers", "sqlalchemy", "uvicorn", "websockets"]
 api = ["fastapi", "jinja2", "python-multipart", "uvicorn"]
 database = ["aiosqlite", "alembic", "asyncpg", "sqlalchemy"]
 dev = ["black", "isort", "mypy", "pytest", "pytest-cov"]
@@ -8272,4 +8279,4 @@ rag = ["beautifulsoup4", "chromadb", "langchain", "langchain-community", "lxml",
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "1fbc8776bfc31c9a79fb21d31232e0e2fb9f0287da4cf4cbe05a8f69f594a931"
+content-hash = "e908b05d5fc37c336a347eeda9e6c1c9588e0483b366e0bab543607014bab8b8"

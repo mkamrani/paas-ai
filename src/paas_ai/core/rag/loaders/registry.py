@@ -8,6 +8,7 @@ from ..config import LoaderType
 
 # Import all strategies
 from .web import WebLoaderStrategy
+from .crawl4ai_web_strategy import Crawl4AIWebLoaderStrategy
 from .html import HTMLLoaderStrategy
 from .pdf import PDFLoaderStrategy  
 from .markdown import MarkdownLoaderStrategy
@@ -24,6 +25,7 @@ class LoaderRegistry:
     
     _strategies: Dict[LoaderType, Type[LoaderStrategy]] = {
         LoaderType.WEB: WebLoaderStrategy,
+        LoaderType.CRAWL4AI_WEB: Crawl4AIWebLoaderStrategy,
         LoaderType.HTML: HTMLLoaderStrategy,
         LoaderType.PDF: PDFLoaderStrategy,
         LoaderType.MARKDOWN: MarkdownLoaderStrategy,

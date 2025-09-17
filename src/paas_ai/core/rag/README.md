@@ -272,10 +272,46 @@ This uses SentenceTransformers for embeddings and FAISS for vector storage, requ
 
 ### Common Issues
 
-1. **Empty Knowledge Base**: Add resources using the CLI or API
-2. **No Search Results**: Check if documents were processed successfully
-3. **Memory Issues**: Reduce batch size or use smaller chunk sizes
-4. **API Errors**: Verify API keys and rate limits
+#### Meta Tensor Error with SentenceTransformers
+
+**Error**: `NotImplementedError: Cannot copy out of meta tensor; no data!`
+
+**Cause**: This error occurs with newer PyTorch versions (2.8.0+) when using the deprecated `SentenceTransformerEmbeddings` from `langchain-community`.
+
+**Solution**: The system automatically uses the new `langchain-huggingface` package instead. If you encounter this error:
+
+1. **Install the new package** (automatically included in RAG dependencies):
+   ```bash
+   pip install langchain-huggingface
+   ```
+
+2. **Or use a different embedding profile**:
+   ```bash
+   paas-ai rag search --config-profile default  # Uses OpenAI embeddings
+   ```
+
+3. **Or downgrade PyTorch** (not recommended):
+   ```bash
+   pip install torch<2.8.0
+   ```
+
+#### Embedding Model Download Issues
+
+**Error**: `Failed to load model 'model-name'`
+
+**Solutions**:
+- Check internet connection
+- Verify model name is correct
+- Try a different model (e.g., `all-MiniLM-L6-v2`)
+
+#### Memory Issues
+
+**Error**: `CUDA out of memory` or similar GPU memory errors
+
+**Solutions**:
+- Use CPU-only mode by setting `CUDA_VISIBLE_DEVICES=""`
+- Use a smaller model
+- Reduce batch size in processing
 
 ### Debug Mode
 

@@ -1,0 +1,143 @@
+# Simple Web Application Example
+# This example demonstrates a basic web application with load balancer
+
+project:
+  name: simple-web-app
+  environment: production
+  region: us-east-1
+
+networking:
+  vpc:
+    cidr: 10.0.0.0/16
+    enable_dns_hostnames: true
+    enable_dns_support: true
+  subnets:
+    - name: public-1
+      cidr: 10.0.1.0/24
+      availability_zone: us-east-1a
+      public: true
+    - name: public-2
+      cidr: 10.0.2.0/24
+      availability_zone: us-east-1b
+      public: true
+    - name: private-1
+      cidr: 10.0.3.0/24
+      availability_zone: us-east-1a
+      public: false
+    - name: private-2
+      cidr: 10.0.4.0/24
+      availability_zone: us-east-1b
+      public: false
+
+security_groups:
+  alb-sg:
+    rules:
+      - type: ingress
+        protocol: tcp
+        port: 80
+        source: 0.0.0.0/0
+        description: "HTTP from anywhere"
+      - type: ingress
+        protocol: tcp
+        port: 443
+        source: 0.0.0.0/0
+        description: "HTTPS from anywhere"
+      - type: egress
+        protocol: all
+        port: all
+        destination: 0.0.0.0/0
+        description: "All outbound traffic"
+
+  web-sg:
+    rules:
+      - type: ingress
+        protocol: tcp
+        port: 80
+        source: alb-sg
+        description: "HTTP from load balancer"
+      - type: egress
+        protocol: all
+        port: all
+        destination: 0.0.0.0/0
+        description: "All outbound traffic"
+
+services:
+  web-app:
+    type: ecs
+    cpu: 512
+    memory: 1024
+    image: nginx:latest
+    port: 80
+    desired_count: 3
+    min_capacity: 2
+    max_capacity: 8
+    subnets:
+      - private-1
+      - private-2
+    security_groups:
+      - web-sg
+    health_check:
+      command: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30
+      timeout: 5
+      retries: 3
+    scaling_policies:
+      - metric: cpu_utilization
+        target_value: 70
+        scale_out_cooldown: 300
+        scale_in_cooldown: 300
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/simple-web-app
+        awslogs-region: us-east-1
+        awslogs-stream-prefix: ecs
+
+load_balancers:
+  web-alb:
+    type: alb
+    scheme: internet-facing
+    subnets:
+      - public-1
+      - public-2
+    security_groups:
+      - alb-sg
+    listeners:
+      - port: 80
+        protocol: HTTP
+        default_action:
+          type: redirect
+          redirect_config:
+            protocol: HTTPS
+            port: 443
+            status_code: HTTP_301
+      - port: 443
+        protocol: HTTPS
+        certificate: web-cert
+        default_action:
+          type: forward
+          service: web-app
+
+certificates:
+  web-cert:
+    domain: example.com
+    subject_alternative_names:
+      - www.example.com
+    validation_method: DNS
+    auto_validation: true
+    auto_renewal: true
+
+dns:
+  zones:
+    - domain: example.com
+      records:
+        - name: www
+          type: A
+          alias: true
+          target: web-alb
+          evaluate_target_health: true
+        - name: ""
+          type: A
+          alias: true
+          target: web-alb
+          evaluate_target_health: true

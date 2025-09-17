@@ -54,13 +54,13 @@ class MultiAgentSystem:
     def _initialize_agents(self) -> Dict[str, BaseAgent]:
         """Initialize all specialized agents."""
         agents = {}
-        available_agent_names = ["designer", "k8s_manifest"]
+        available_agent_names = ["designer", "paas_manifest_generator"]
         
         # Designer Agent
         designer_tools = [
-            "search_knowledge_base",
-            "generate_mermaid_diagram",
-            "explain_architecture_pattern"
+            "rag_search",
+            "design_specification",
+            "handoff_to_agent"
         ]
         agents["designer"] = BaseAgent(
             name="designer",
@@ -70,15 +70,16 @@ class MultiAgentSystem:
             available_agents=available_agent_names
         )
         
-        # K8s Manifest Agent
-        k8s_tools = [
-            "search_knowledge_base",
-            "generate_k8s_manifest",
-            "validate_k8s_manifest"
+        # PaaS Manifest Generator Agent
+        paas_tools = [
+            "rag_search",
+            "paas_manifest_generator",
+            "manifest_validation",
+            "handoff_to_agent"
         ]
-        agents["k8s_manifest"] = BaseAgent(
-            name="k8s_manifest",
-            tool_names=k8s_tools,
+        agents["paas_manifest_generator"] = BaseAgent(
+            name="paas_manifest_generator",
+            tool_names=paas_tools,
             config=self.config,
             mode=self.mode,
             available_agents=available_agent_names
@@ -219,17 +220,19 @@ class MultiAgentSystem:
     
     def _get_default_supervisor_prompt(self) -> str:
         """Get default supervisor prompt."""
-        return """You are a multi-agent coordinator for a PaaS AI system. 
+        return """You are a multi-agent coordinator for a Cool Demo PaaS AI system. 
 
 You manage two specialized agents:
-- designer: Handles system architecture, design patterns, and Mermaid diagrams
-- k8s_manifest: Handles Kubernetes deployments, YAML generation, and container orchestration
+- designer: Handles infrastructure architecture, AWS service selection, and high-level design
+- paas_manifest_generator: Handles Cool Demo PaaS YAML generation, configuration implementation, and validation
 
 Analyze user requests and route them to the appropriate specialist agent based on the content:
-- Architecture, design, patterns, diagrams → designer
-- Kubernetes, manifests, deployment, YAML, containers → k8s_manifest
+- Architecture, design, service selection, requirements analysis → designer
+- YAML generation, configuration implementation, manifest creation → paas_manifest_generator
 
-For complex requests that span both domains, start with the designer agent for architectural planning, then let the workflow continue naturally.
+For complex requests that span both domains, start with the designer agent for architectural planning, then route to the generator for implementation once you have complete design specifications.
+
+The standard workflow is: Designer creates specifications → Generator creates YAML configurations
 
 Assign work to one agent at a time, do not call agents in parallel.
 Do not do any work yourself.
@@ -267,7 +270,8 @@ Do not do any work yourself.
                     "paas_config": self.config,
                     "token_tracker": self.token_tracker,
                     "request_id": request_id
-                }
+                },
+                "recursion_limit": 50  # Increase from default 25 to handle complex multi-agent workflows
             }
             
             # Run the coordination system
@@ -299,6 +303,127 @@ Do not do any work yourself.
             self.logger.error(error_msg)
             return error_msg
     
+    def ask_stream(self, question: str):
+        """
+        Ask a question with streaming response.
+        
+        Args:
+            question: The question to ask
+            
+        Yields:
+            str: Streaming tokens from the LLM
+        """
+        if self.verbose:
+            self.logger.info(f"🔍 Processing question with streaming: {question[:100]}...")
+        else:
+            self.logger.info(f"Processing question in {self.mode} mode (streaming): {question[:100]}...")
+        
+        start_time = time.time()
+        request_id = str(uuid.uuid4())
+        
+        try:
+            # Create initial state
+            initial_state = {
+                "messages": [HumanMessage(content=question)]
+            }
+            
+            # Add runtime config with token tracker
+            runtime_config = {
+                "configurable": {
+                    "paas_config": self.config,
+                    "token_tracker": self.token_tracker,
+                    "request_id": request_id,
+                    "recursion_limit": 50  # Increase from default 25 to handle complex multi-agent workflows
+                },
+            }
+            
+            # Stream tokens from the coordination system using "messages" mode
+            for token, metadata in self.coordinator.stream(initial_state, config=runtime_config, stream_mode="messages",subgraphs=True):
+                # token is the actual LLM token, metadata contains node info
+                if hasattr(token, 'content') and token.content:
+                    yield token.content
+                elif isinstance(token, str):
+                    yield token
+            
+            # Show timing info in verbose mode after streaming completes
+            if self.verbose:
+                duration = time.time() - start_time
+                self.logger.info(f"⏱️ Streaming completed in {duration:.2f}s")
+                
+                # Show token summary if tracking enabled
+                if self.config.multi_agent.track_tokens:
+                    session_summary = self.token_tracker.get_last_request_summary()
+                    if session_summary.get('total_tokens', 0) > 0:
+                        tokens = session_summary['total_tokens']
+                        agent = session_summary.get('agent', 'unknown')
+                        model = session_summary.get('model', 'unknown')
+                        self.logger.info(f"🪙 Token usage: {tokens} tokens ({agent} using {model})")
+            
+        except Exception as e:
+            if self.verbose:
+                self.logger.error(f"❌ Error in streaming: {e}")
+            error_msg = f"Error in streaming: {str(e)}"
+            self.logger.error(error_msg)
+            # Yield error as final chunk
+            yield f"\n❌ {error_msg}"
+    
+    def ask_stream_direct(self, question: str):
+        """
+        Ask a question with direct agent streaming (bypasses coordinator).
+        This is faster for simple questions that don't need multi-agent coordination.
+        
+        Args:
+            question: The question to ask
+            
+        Yields:
+            str: Streaming tokens from the LLM
+        """
+        if self.verbose:
+            self.logger.info(f"🔍 Processing question with direct streaming: {question[:100]}...")
+        
+        start_time = time.time()
+        request_id = str(uuid.uuid4())
+        
+        try:
+            # Use the first available agent directly for simple streaming
+            # This bypasses the coordinator overhead
+            primary_agent = next(iter(self.agents.values()))
+            
+            # Create initial state
+            initial_state = {
+                "messages": [HumanMessage(content=question)]
+            }
+            
+            # Add runtime config with token tracker
+            runtime_config = {
+                "configurable": {
+                    "paas_config": self.config,
+                    "token_tracker": self.token_tracker,
+                    "request_id": request_id
+                },
+                "recursion_limit": 50
+            }
+            
+            # Stream directly from the individual agent using "messages" mode
+            for token, metadata in primary_agent.react_agent.stream(initial_state, config=runtime_config, stream_mode="messages"):
+                # token is the actual LLM token, metadata contains node info
+                if hasattr(token, 'content') and token.content:
+                    yield token.content
+                elif isinstance(token, str):
+                    yield token
+            
+            # Show timing info in verbose mode after streaming completes
+            if self.verbose:
+                duration = time.time() - start_time
+                self.logger.info(f"⏱️ Direct streaming completed in {duration:.2f}s")
+                
+        except Exception as e:
+            if self.verbose:
+                self.logger.error(f"❌ Error in direct streaming: {e}")
+            error_msg = f"Error in direct streaming: {str(e)}"
+            self.logger.error(error_msg)
+            yield f"\n❌ {error_msg}"
+    
     def chat(self, messages: List[BaseMessage]) -> str:
         """
         Chat with conversation history - same interface as RAGAgent.
@@ -324,8 +449,10 @@ Do not do any work yourself.
                 "configurable": {
                     "paas_config": self.config,
                     "token_tracker": self.token_tracker,
-                    "request_id": request_id
-                }
+                    "request_id": request_id,
+                    "recursion_limit": 100,  # Increase from default 25 to handle complex multi-agent workflows
+                    "subgraphs": True
+                },
             }
             
             # Run the coordination system
@@ -356,6 +483,66 @@ Do not do any work yourself.
             error_msg = f"Error in chat: {str(e)}"
             self.logger.error(error_msg)
             return error_msg
+    
+    def chat_stream(self, messages: List[BaseMessage]):
+        """
+        Chat with conversation history and streaming response.
+        
+        Args:
+            messages: List of conversation messages
+            
+        Yields:
+            str: Streaming tokens from the LLM
+        """
+        if self.verbose:
+            self.logger.info(f"💬 Processing chat with streaming: {len(messages)} messages")
+        
+        start_time = time.time()
+        request_id = str(uuid.uuid4())
+        
+        try:
+            # Create initial state with conversation history
+            initial_state = {"messages": messages}
+            
+            # Add runtime config with token tracker
+            runtime_config = {
+                "configurable": {
+                    "paas_config": self.config,
+                    "token_tracker": self.token_tracker,
+                    "request_id": request_id
+                },
+                "recursion_limit": 50  # Increase from default 25 to handle complex multi-agent workflows
+            }
+            
+            # Stream tokens from the coordination system using "messages" mode
+            for token, metadata in self.coordinator.stream(initial_state, config=runtime_config, stream_mode="messages"):
+                # token is the actual LLM token, metadata contains node info
+                if hasattr(token, 'content') and token.content:
+                    yield token.content
+                elif isinstance(token, str):
+                    yield token
+            
+            # Show timing info in verbose mode after streaming completes
+            if self.verbose:
+                duration = time.time() - start_time
+                self.logger.info(f"⏱️ Chat streaming completed in {duration:.2f}s")
+                
+                # Show token summary if tracking enabled
+                if self.config.multi_agent.track_tokens:
+                    session_summary = self.token_tracker.get_last_request_summary()
+                    if session_summary.get('total_tokens', 0) > 0:
+                        tokens = session_summary['total_tokens']
+                        agent = session_summary.get('agent', 'unknown')
+                        model = session_summary.get('model', 'unknown')
+                        self.logger.info(f"🪙 Token usage: {tokens} tokens ({agent} using {model})")
+            
+        except Exception as e:
+            if self.verbose:
+                self.logger.error(f"❌ Error in chat streaming: {e}")
+            error_msg = f"Error in chat streaming: {str(e)}"
+            self.logger.error(error_msg)
+            # Yield error as final chunk
+            yield f"\n❌ {error_msg}"
     
     def get_available_tools(self) -> List[Dict[str, Any]]:
         """Get all available tools across agents."""

@@ -195,7 +195,7 @@ class MultiAgentConfig(BaseModel):
     """Multi-agent system configuration."""
     enabled: bool = True
     mode: Literal["supervisor", "swarm"] = "supervisor"
-    default_agent: Literal["designer", "k8s_manifest"] = "designer"
+    default_agent: Literal["designer", "paas_manifest_generator"] = "designer"
     
     # Token tracking with callback support
     track_tokens: bool = False
@@ -228,7 +228,7 @@ class Config(BaseModel):
                 "model": "gpt-4o-mini",
                 "temperature": 0.1
             },
-            "k8s_manifest": {
+            "paas_manifest_generator": {
                 "model": "gpt-4o-mini", 
                 "temperature": 0.0  # More deterministic for YAML generation
             }

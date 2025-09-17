@@ -1,0 +1,243 @@
+# Microservices Architecture Example
+# This example demonstrates a microservices architecture with path-based routing
+
+project:
+  name: microservices-app
+  environment: production
+  region: us-east-1
+
+networking:
+  vpc:
+    cidr: 10.0.0.0/16
+    enable_dns_hostnames: true
+    enable_dns_support: true
+  subnets:
+    - name: public-1
+      cidr: 10.0.1.0/24
+      availability_zone: us-east-1a
+      public: true
+    - name: public-2
+      cidr: 10.0.2.0/24
+      availability_zone: us-east-1b
+      public: true
+    - name: private-1
+      cidr: 10.0.10.0/24
+      availability_zone: us-east-1a
+      public: false
+    - name: private-2
+      cidr: 10.0.11.0/24
+      availability_zone: us-east-1b
+      public: false
+
+security_groups:
+  alb-sg:
+    rules:
+      - type: ingress
+        protocol: tcp
+        port: 443
+        source: 0.0.0.0/0
+        description: "HTTPS from anywhere"
+      - type: egress
+        protocol: all
+        port: all
+        destination: 0.0.0.0/0
+        description: "All outbound traffic"
+
+  user-service-sg:
+    rules:
+      - type: ingress
+        protocol: tcp
+        port: 3000
+        source: alb-sg
+        description: "HTTP from ALB"
+      - type: egress
+        protocol: all
+        port: all
+        destination: 0.0.0.0/0
+        description: "All outbound traffic"
+
+  order-service-sg:
+    rules:
+      - type: ingress
+        protocol: tcp
+        port: 3000
+        source: alb-sg
+        description: "HTTP from ALB"
+      - type: egress
+        protocol: all
+        port: all
+        destination: 0.0.0.0/0
+        description: "All outbound traffic"
+
+  product-service-sg:
+    rules:
+      - type: ingress
+        protocol: tcp
+        port: 3000
+        source: alb-sg
+        description: "HTTP from ALB"
+      - type: egress
+        protocol: all
+        port: all
+        destination: 0.0.0.0/0
+        description: "All outbound traffic"
+
+services:
+  user-service:
+    type: ecs
+    cpu: 256
+    memory: 512
+    image: user-service:latest
+    port: 3000
+    desired_count: 2
+    min_capacity: 1
+    max_capacity: 5
+    subnets:
+      - private-1
+      - private-2
+    security_groups:
+      - user-service-sg
+    environment:
+      - name: NODE_ENV
+        value: production
+      - name: SERVICE_NAME
+        value: user-service
+    secrets:
+      - name: DATABASE_URL
+        value: "user-db-connection"
+      - name: JWT_SECRET
+        value: "jwt-secret-key"
+    health_check:
+      command: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30
+      timeout: 5
+      retries: 3
+    scaling_policies:
+      - metric: cpu_utilization
+        target_value: 70
+        scale_out_cooldown: 300
+        scale_in_cooldown: 300
+
+  order-service:
+    type: ecs
+    cpu: 256
+    memory: 512
+    image: order-service:latest
+    port: 3000
+    desired_count: 2
+    min_capacity: 1
+    max_capacity: 5
+    subnets:
+      - private-1
+      - private-2
+    security_groups:
+      - order-service-sg
+    environment:
+      - name: NODE_ENV
+        value: production
+      - name: SERVICE_NAME
+        value: order-service
+    secrets:
+      - name: DATABASE_URL
+        value: "order-db-connection"
+      - name: PAYMENT_API_KEY
+        value: "stripe-secret-key"
+    health_check:
+      command: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30
+      timeout: 5
+      retries: 3
+    scaling_policies:
+      - metric: cpu_utilization
+        target_value: 70
+        scale_out_cooldown: 300
+        scale_in_cooldown: 300
+
+  product-service:
+    type: ecs
+    cpu: 256
+    memory: 512
+    image: product-service:latest
+    port: 3000
+    desired_count: 2
+    min_capacity: 1
+    max_capacity: 5
+    subnets:
+      - private-1
+      - private-2
+    security_groups:
+      - product-service-sg
+    environment:
+      - name: NODE_ENV
+        value: production
+      - name: SERVICE_NAME
+        value: product-service
+    secrets:
+      - name: DATABASE_URL
+        value: "product-db-connection"
+      - name: CACHE_URL
+        value: "redis-connection-string"
+    health_check:
+      command: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30
+      timeout: 5
+      retries: 3
+    scaling_policies:
+      - metric: cpu_utilization
+        target_value: 70
+        scale_out_cooldown: 300
+        scale_in_cooldown: 300
+
+load_balancers:
+  services-alb:
+    type: alb
+    scheme: internet-facing
+    subnets:
+      - public-1
+      - public-2
+    security_groups:
+      - alb-sg
+    listeners:
+      - port: 443
+        protocol: HTTPS
+        certificate: services-cert
+        rules:
+          - condition:
+              path_pattern: "/users/*"
+            action:
+              type: forward
+              service: user-service
+          - condition:
+              path_pattern: "/orders/*"
+            action:
+              type: forward
+              service: order-service
+          - condition:
+              path_pattern: "/products/*"
+            action:
+              type: forward
+              service: product-service
+
+certificates:
+  services-cert:
+    domain: example.com
+    subject_alternative_names:
+      - "*.example.com"
+    validation_method: DNS
+    auto_validation: true
+    auto_renewal: true
+
+dns:
+  zones:
+    - domain: example.com
+      records:
+        - name: ""
+          type: A
+          alias: true
+          target: services-alb
+          evaluate_target_health: true
+        - name: "*"
+          type: A
+          alias: true
+          target: services-alb
+          evaluate_target_health: true

@@ -21,3 +21,4 @@ htmlcov/
 # Build artifacts
 dist/
 build/
+rag_data/

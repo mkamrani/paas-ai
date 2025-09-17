@@ -180,26 +180,30 @@ class RAGProcessor:
         return pipeline
     
     def _handle_initialization_error(self, error: Exception, config: Any):
-        """Handle initialization errors with helpful messages."""
+        """Handle initialization errors with more specific error messages."""
         error_str = str(error).lower()
         
-        # OpenAI API key missing
-        if "api_key" in error_str and ("openai" in error_str or "client option" in error_str):
-            if config.embedding.type == "openai":
-                raise ConfigurationError(
-                    f"OpenAI API key is required for '{config.embedding.type}' embeddings.\n"
-                    f"Solutions:\n"
-                    f"  1. Set environment variable: export OPENAI_API_KEY='your-key-here'\n"
-                    f"  2. Use local config instead: --config-profile local\n"
-                    f"  3. Switch to a different embedding type in your config"
-                ) from error
-        
-        # Azure OpenAI configuration missing
-        elif "azure" in error_str:
+        # Torch meta tensor issues (common with newer PyTorch and SentenceTransformers)
+        if "meta tensor" in error_str or "cannot copy out of meta tensor" in error_str:
             raise ConfigurationError(
-                f"Azure OpenAI configuration is incomplete.\n"
-                f"Required: azure_endpoint, api_key, and api_version\n"
-                f"Check your configuration or use a different profile"
+                f"PyTorch meta tensor error detected with {config.embedding.type} embeddings.\n"
+                f"This is commonly caused by:\n"
+                f"  1. Compatibility issues between PyTorch and sentence-transformers versions\n"
+                f"  2. Using deprecated langchain-community HuggingFaceEmbeddings\n"
+                f"  3. Insufficient GPU memory during model loading\n"
+                f"Solutions:\n"
+                f"  1. Install langchain-huggingface: pip install langchain-huggingface\n"
+                f"  2. Use a different embedding model: --config-profile default (OpenAI)\n"
+                f"  3. Downgrade PyTorch: pip install torch<2.8.0\n"
+                f"Original error: {error}"
+            ) from error
+        
+        # OpenAI API key missing
+        elif "openai" in error_str and ("api" in error_str or "key" in error_str):
+            raise ConfigurationError(
+                f"OpenAI API key is required for OpenAI embeddings.\n"
+                f"Set environment variable: export OPENAI_API_KEY='your-key-here'\n"
+                f"Or use local config: --config-profile local"
             ) from error
         
         # Cohere API key missing

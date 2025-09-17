@@ -2,7 +2,20 @@
 SentenceTransformers embedding strategy.
 """
 
-from langchain_community.embeddings import SentenceTransformerEmbeddings
+try:
+    # Try to use the new langchain-huggingface package
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    # Fallback to the deprecated langchain-community version
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    import warnings
+    warnings.warn(
+        "Using deprecated HuggingFaceEmbeddings from langchain-community. "
+        "Consider installing langchain-huggingface: pip install langchain-huggingface",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
 from langchain_core.embeddings import Embeddings
 
 from .base import EmbeddingStrategy
@@ -15,7 +28,10 @@ class SentenceTransformersEmbeddingStrategy(EmbeddingStrategy):
     def create_embeddings(self, config: EmbeddingConfig) -> Embeddings:
         """Create SentenceTransformers embeddings."""
         params = config.params.copy()
-        return SentenceTransformerEmbeddings(
+        
+        # Use HuggingFaceEmbeddings with SentenceTransformers models
+        # This avoids the meta tensor issue with SentenceTransformerEmbeddings
+        return HuggingFaceEmbeddings(
             model_name=config.model_name,
             **params
         )
@@ -30,4 +46,9 @@ class SentenceTransformersEmbeddingStrategy(EmbeddingStrategy):
         valid_prefixes = ['all-', 'sentence-transformers/', 'paraphrase-', 'distilbert-', 'bert-']
         if not any(config.model_name.startswith(prefix) for prefix in valid_prefixes):
             # Still allow it, just warn
-            pass 
+            import warnings
+            warnings.warn(
+                f"Model name '{config.model_name}' doesn't match common SentenceTransformers patterns. "
+                f"Expected prefixes: {valid_prefixes}",
+                UserWarning
+            ) 

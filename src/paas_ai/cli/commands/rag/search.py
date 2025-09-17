@@ -9,7 +9,7 @@ import json
 
 from paas_ai.utils.logging import get_logger
 from ....core.rag import RAGProcessor, ConfigurationError
-from ....core.config.schemas import DEFAULT_CONFIG_PROFILES, ResourceType
+from ....core.config import load_config, ResourceType
 
 
 @click.command()
@@ -55,7 +55,11 @@ def search(query: str, resource_type: str, limit: int, format: str, config_profi
         logger.debug(f"Resource type: {resource_type}, Limit: {limit}")
         
         # Initialize RAG processor
-        config = DEFAULT_CONFIG_PROFILES[config_profile]
+        if config_profile != 'default':
+            # TODO: Implement profile override logic or remove the option
+            logger.warning(f"Config profile override not yet implemented: {config_profile}")
+        
+        config = load_config()
         processor = RAGProcessor(config)
         
         # Check if knowledge base is available

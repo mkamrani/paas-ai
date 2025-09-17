@@ -8,6 +8,7 @@ from .base import LoaderStrategy
 
 # Import all strategies for convenience
 from .web import WebLoaderStrategy
+from .crawl4ai_web_strategy import Crawl4AIWebLoaderStrategy
 from .html import HTMLLoaderStrategy
 from .pdf import PDFLoaderStrategy
 from .markdown import MarkdownLoaderStrategy
@@ -23,6 +24,7 @@ __all__ = [
     'LoaderRegistry', 
     'LoaderStrategy',
     'WebLoaderStrategy',
+    'Crawl4AIWebLoaderStrategy',
     'HTMLLoaderStrategy',
     'PDFLoaderStrategy',
     'MarkdownLoaderStrategy',

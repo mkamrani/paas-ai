@@ -25,6 +25,7 @@ except ImportError:
 class LoaderType(str, Enum):
     """Supported document loader types."""
     WEB = "web"
+    CRAWL4AI_WEB = "crawl4ai_web"
     HTML = "html"
     PDF = "pdf"
     MARKDOWN = "markdown"
@@ -256,7 +257,7 @@ def get_default_loader_config(url: str) -> LoaderConfig:
     elif 'github.com' in url_lower:
         return LoaderConfig(type=LoaderType.GITHUB)
     elif url_lower.startswith(('http://', 'https://')):
-        return LoaderConfig(type=LoaderType.WEB)
+        return LoaderConfig(type=LoaderType.CRAWL4AI_WEB)
     else:
         # Assume local directory or file
         return LoaderConfig(type=LoaderType.DIRECTORY)

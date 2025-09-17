@@ -1,683 +1,453 @@
-"""
-Design tools for the Designer agent.
+"""Design tools for the Designer Agent to create structured specifications."""
 
-Provides tools for architecture design, Mermaid diagram generation, and pattern explanations.
-"""
-
-from typing import Any, Dict, Optional, Literal
-from langchain.tools import BaseTool
-from langchain_core.callbacks import CallbackManagerForToolRun
-from pydantic import BaseModel, Field
-
-from paas_ai.utils.logging import get_logger
-
-logger = get_logger("paas_ai.agents.design_tools")
+import json
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, asdict
+from enum import Enum
 
 
-class MermaidDiagramInput(BaseModel):
-    """Input schema for Mermaid diagram generation."""
-    diagram_type: Literal["flowchart", "sequence", "class", "deployment", "er", "state"] = Field(
-        description="Type of diagram to generate"
-    )
-    title: str = Field(description="Title for the diagram")
-    components: str = Field(description="Description of system components and their roles")
-    relationships: str = Field(description="Description of relationships between components")
-    additional_context: Optional[str] = Field(
-        default=None, 
-        description="Additional context or constraints for the diagram"
-    )
+class ServiceType(str, Enum):
+    """Supported service types in Cool Demo PaaS."""
+    ECS = "ecs"
+    EC2 = "ec2"
+    RDS = "rds"
 
 
-class MermaidDiagramTool(BaseTool):
-    """Tool for generating Mermaid diagrams for system architecture visualization."""
-    
-    name: str = "generate_mermaid_diagram"
-    description: str = """
-    Generate Mermaid diagrams for system architecture visualization.
-    
-    Use this tool to create visual representations of:
-    - System architectures (flowchart)
-    - Sequence diagrams for process flows
-    - Class diagrams for object relationships
-    - Deployment diagrams for infrastructure
-    - Entity-relationship diagrams for data models
-    - State diagrams for process states
-    
-    Provide clear descriptions of components and their relationships.
+class ArchitecturePattern(str, Enum):
+    """Common architecture patterns."""
+    MICROSERVICES = "microservices"
+    THREE_TIER = "three-tier"
+    SERVERLESS = "serverless"
+    MONOLITH = "monolith"
+
+
+@dataclass
+class ServiceRequirement:
+    """Requirements for a single service."""
+    name: str
+    type: ServiceType
+    description: str
+    cpu: Optional[int] = None
+    memory: Optional[int] = None
+    scaling: Optional[Dict[str, Any]] = None
+    environment_variables: Optional[List[Dict[str, str]]] = None
+    secrets: Optional[List[str]] = None
+    health_check_path: Optional[str] = None
+    port: Optional[int] = None
+    image: Optional[str] = None
+    # RDS specific
+    engine: Optional[str] = None
+    instance_class: Optional[str] = None
+    storage: Optional[int] = None
+
+
+@dataclass
+class NetworkingRequirement:
+    """Networking requirements for the infrastructure."""
+    pattern: ArchitecturePattern
+    vpc_cidr: str = "10.0.0.0/16"
+    multi_az: bool = True
+    public_subnets: bool = True
+    private_subnets: bool = True
+    database_subnets: bool = False
+
+
+@dataclass
+class LoadBalancingRequirement:
+    """Load balancing requirements."""
+    type: str = "alb"
+    scheme: str = "internet-facing"
+    routing_type: str = "path-based"  # path-based, host-based, simple
+    routes: Optional[List[Dict[str, str]]] = None
+    https_redirect: bool = True
+
+
+@dataclass
+class SecurityRequirement:
+    """Security requirements for the infrastructure."""
+    https_required: bool = True
+    certificate_domain: Optional[str] = None
+    additional_domains: Optional[List[str]] = None
+    custom_security_groups: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
+class ScalingRequirement:
+    """Auto-scaling requirements."""
+    auto_scaling: bool = True
+    min_capacity: int = 1
+    max_capacity: int = 10
+    target_cpu: int = 70
+    target_memory: int = 80
+
+
+@dataclass
+class DesignSpecification:
+    """Complete design specification for infrastructure."""
+    project_name: str
+    environment: str
+    region: str
+    services: List[ServiceRequirement]
+    networking: NetworkingRequirement
+    load_balancing: Optional[LoadBalancingRequirement] = None
+    security: SecurityRequirement = None
+    scaling: ScalingRequirement = None
+    description: str = ""
+
+
+def create_design_specification(
+    project_name: str,
+    environment: str,
+    region: str,
+    services: List[Dict[str, Any]],
+    architecture_pattern: str,
+    domain: Optional[str] = None,
+    scaling_config: Optional[Dict[str, Any]] = None,
+    description: str = ""
+) -> str:
     """
-    args_schema: type = MermaidDiagramInput
+    Create a structured design specification for infrastructure.
     
-    def __init__(self):
-        """Initialize the Mermaid diagram tool."""
-        super().__init__()
-    
-    def _run(
-        self,
-        diagram_type: str,
-        title: str,
-        components: str,
-        relationships: str,
-        additional_context: Optional[str] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs
-    ) -> str:
-        """Generate a Mermaid diagram based on the provided specifications."""
-        try:
-            # Create diagram based on type
-            if diagram_type == "flowchart":
-                return self._create_flowchart(title, components, relationships, additional_context)
-            elif diagram_type == "sequence":
-                return self._create_sequence_diagram(title, components, relationships, additional_context)
-            elif diagram_type == "class":
-                return self._create_class_diagram(title, components, relationships, additional_context)
-            elif diagram_type == "deployment":
-                return self._create_deployment_diagram(title, components, relationships, additional_context)
-            elif diagram_type == "er":
-                return self._create_er_diagram(title, components, relationships, additional_context)
-            elif diagram_type == "state":
-                return self._create_state_diagram(title, components, relationships, additional_context)
-            else:
-                return f"Unsupported diagram type: {diagram_type}"
-                
-        except Exception as e:
-            logger.error(f"Error generating Mermaid diagram: {e}")
-            return f"Error generating diagram: {str(e)}"
-    
-    def _create_flowchart(self, title: str, components: str, relationships: str, context: Optional[str] = None) -> str:
-        """Create a flowchart diagram."""
-        return f"""# {title}
-
-```mermaid
-flowchart TD
-    %% {title}
-    
-    %% Components based on: {components}
-    %% Relationships: {relationships}
-    {f"%% Additional context: {context}" if context else ""}
-    
-    A[User/Client] --> B[Load Balancer]
-    B --> C[API Gateway]
-    C --> D[Authentication Service]
-    C --> E[Business Logic Services]
-    E --> F[Database Layer]
-    E --> G[Cache Layer]
-    E --> H[Message Queue]
-    
-    %% Styling
-    classDef userClass fill:#e1f5fe
-    classDef serviceClass fill:#f3e5f5
-    classDef dataClass fill:#e8f5e8
-    
-    class A userClass
-    class B,C,D,E serviceClass
-    class F,G,H dataClass
-```
-
-**Generated Architecture Diagram**
-
-This flowchart represents: {components}
-
-**Key Relationships**: {relationships}
-
-{f"**Additional Considerations**: {context}" if context else ""}
-
-**Diagram Elements**:
-- **Blue**: User-facing components
-- **Purple**: Service layer components  
-- **Green**: Data and infrastructure components
-"""
-
-    def _create_sequence_diagram(self, title: str, components: str, relationships: str, context: Optional[str] = None) -> str:
-        """Create a sequence diagram."""
-        return f"""# {title}
-
-```mermaid
-sequenceDiagram
-    title {title}
-    
-    %% Participants based on: {components}
-    participant Client
-    participant API
-    participant Auth
-    participant Service
-    participant DB
-    
-    %% Flow based on: {relationships}
-    Client->>+API: Request
-    API->>+Auth: Validate Token
-    Auth-->>-API: Token Valid
-    API->>+Service: Process Request
-    Service->>+DB: Query Data
-    DB-->>-Service: Return Data
-    Service-->>-API: Response Data
-    API-->>-Client: Final Response
-    
-    Note over Client,DB: {relationships}
-```
-
-**Generated Sequence Diagram**
-
-This sequence diagram shows: {components}
-
-**Process Flow**: {relationships}
-
-{f"**Context**: {context}" if context else ""}
-"""
-
-    def _create_deployment_diagram(self, title: str, components: str, relationships: str, context: Optional[str] = None) -> str:
-        """Create a deployment/infrastructure diagram."""
-        return f"""# {title}
-
-```mermaid
-flowchart TB
-    subgraph "Production Environment"
-        subgraph "Load Balancing"
-            LB[Load Balancer]
-        end
+    Args:
+        project_name: Name of the project
+        environment: Environment (dev, staging, production)
+        region: AWS region
+        services: List of service requirements
+        architecture_pattern: Architecture pattern to use
+        domain: Domain name for certificates and DNS
+        scaling_config: Auto-scaling configuration
+        description: Description of the infrastructure
         
-        subgraph "Application Tier"
-            A1[App Instance 1]
-            A2[App Instance 2]
-            A3[App Instance 3]
-        end
-        
-        subgraph "Data Tier"
-            DB[(Primary Database)]
-            CACHE[(Redis Cache)]
-            Q[Message Queue]
-        end
-        
-        subgraph "Monitoring"
-            MON[Monitoring Service]
-            LOG[Logging Service]
-        end
-    end
-    
-    Internet --> LB
-    LB --> A1
-    LB --> A2
-    LB --> A3
-    
-    A1 --> DB
-    A2 --> DB
-    A3 --> DB
-    
-    A1 --> CACHE
-    A2 --> CACHE
-    A3 --> CACHE
-    
-    A1 --> Q
-    A2 --> Q
-    A3 --> Q
-    
-    A1 --> MON
-    A2 --> MON
-    A3 --> MON
-    
-    A1 --> LOG
-    A2 --> LOG
-    A3 --> LOG
-```
-
-**Generated Deployment Diagram**
-
-**Infrastructure Components**: {components}
-
-**Deployment Architecture**: {relationships}
-
-{f"**Additional Deployment Notes**: {context}" if context else ""}
-"""
-
-    def _create_class_diagram(self, title: str, components: str, relationships: str, context: Optional[str] = None) -> str:
-        """Create a class diagram."""
-        return f"""# {title}
-
-```mermaid
-classDiagram
-    title {title}
-    
-    class User {{
-        +String id
-        +String email
-        +String name
-        +login()
-        +logout()
-    }}
-    
-    class Service {{
-        +String id
-        +String name
-        +process()
-        +validate()
-    }}
-    
-    class Repository {{
-        +find()
-        +save()
-        +delete()
-    }}
-    
-    User --> Service : uses
-    Service --> Repository : accesses
-    
-    note for User "Represents system users"
-    note for Service "Business logic layer"
-    note for Repository "Data access layer"
-```
-
-**Generated Class Diagram**
-
-**System Components**: {components}
-
-**Class Relationships**: {relationships}
-
-{f"**Design Notes**: {context}" if context else ""}
-"""
-
-    def _create_er_diagram(self, title: str, components: str, relationships: str, context: Optional[str] = None) -> str:
-        """Create an entity-relationship diagram."""
-        return f"""# {title}
-
-```mermaid
-erDiagram
-    USER ||--o{{ ORDER : places
-    USER {{
-        string id PK
-        string email
-        string name
-        datetime created_at
-    }}
-    
-    ORDER ||--|{{ ORDER_ITEM : contains
-    ORDER {{
-        string id PK
-        string user_id FK
-        decimal total
-        datetime created_at
-        string status
-    }}
-    
-    ORDER_ITEM }}o--|| PRODUCT : references
-    ORDER_ITEM {{
-        string id PK
-        string order_id FK
-        string product_id FK
-        int quantity
-        decimal price
-    }}
-    
-    PRODUCT {{
-        string id PK
-        string name
-        string description
-        decimal price
-        int stock
-    }}
-```
-
-**Generated Entity-Relationship Diagram**
-
-**Data Entities**: {components}
-
-**Entity Relationships**: {relationships}
-
-{f"**Data Model Notes**: {context}" if context else ""}
-"""
-
-    def _create_state_diagram(self, title: str, components: str, relationships: str, context: Optional[str] = None) -> str:
-        """Create a state diagram."""
-        return f"""# {title}
-
-```mermaid
-stateDiagram-v2
-    [*] --> Initial
-    Initial --> Processing : start
-    Processing --> Success : complete
-    Processing --> Failed : error
-    Processing --> Cancelled : cancel
-    
-    Success --> [*]
-    Failed --> Retry : retry
-    Failed --> [*] : abandon
-    Cancelled --> [*]
-    
-    Retry --> Processing : restart
-    
-    note right of Processing
-        {relationships}
-    end note
-```
-
-**Generated State Diagram**
-
-**System States**: {components}
-
-**State Transitions**: {relationships}
-
-{f"**Process Notes**: {context}" if context else ""}
-"""
-
-
-class ArchitecturePatternInput(BaseModel):
-    """Input schema for architecture pattern explanation."""
-    pattern_name: str = Field(description="Name of the architectural pattern to explain")
-    context: Optional[str] = Field(
-        default=None,
-        description="Specific context or use case for the pattern"
-    )
-    constraints: Optional[str] = Field(
-        default=None,
-        description="Any constraints or requirements to consider"
-    )
-
-
-class ArchitecturePatternTool(BaseTool):
-    """Tool for explaining architectural patterns and providing implementation guidance."""
-    
-    name: str = "explain_architecture_pattern"
-    description: str = """
-    Explain architectural patterns and provide detailed implementation guidance.
-    
-    Use this tool to get comprehensive explanations of:
-    - Microservices architecture
-    - Event-driven architecture
-    - Serverless patterns
-    - CQRS and Event Sourcing
-    - Hexagonal architecture
-    - Layered architecture
-    - And many other patterns
-    
-    Provide the pattern name and any specific context for tailored guidance.
+    Returns:
+        JSON string representation of the design specification
     """
-    args_schema: type = ArchitecturePatternInput
     
-    def __init__(self):
-        """Initialize the architecture pattern tool."""
-        super().__init__()
-    
-    def _run(
-        self,
-        pattern_name: str,
-        context: Optional[str] = None,
-        constraints: Optional[str] = None,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        **kwargs
-    ) -> str:
-        """Explain an architectural pattern with implementation guidance."""
-        try:
-            pattern_lower = pattern_name.lower()
+    # Convert services to ServiceRequirement objects
+    service_requirements = []
+    if services and isinstance(services, list):
+        for service in services:
+            # Ensure service is a dict and has required fields
+            if not isinstance(service, dict):
+                continue
             
-            # Common patterns
-            if "microservice" in pattern_lower:
-                return self._explain_microservices(context, constraints)
-            elif "event" in pattern_lower and "driven" in pattern_lower:
-                return self._explain_event_driven(context, constraints)
-            elif "serverless" in pattern_lower:
-                return self._explain_serverless(context, constraints)
-            elif "cqrs" in pattern_lower:
-                return self._explain_cqrs(context, constraints)
-            elif "hexagonal" in pattern_lower or "ports" in pattern_lower:
-                return self._explain_hexagonal(context, constraints)
-            elif "layered" in pattern_lower or "n-tier" in pattern_lower:
-                return self._explain_layered(context, constraints)
-            elif "mvc" in pattern_lower:
-                return self._explain_mvc(context, constraints)
-            elif "saga" in pattern_lower:
-                return self._explain_saga(context, constraints)
-            else:
-                return self._explain_generic_pattern(pattern_name, context, constraints)
-                
-        except Exception as e:
-            logger.error(f"Error explaining architecture pattern: {e}")
-            return f"Error explaining pattern: {str(e)}"
+            # Provide defaults for required fields
+            service_name = service.get("name", "webapp")
+            service_type = service.get("type", "ecs")
+            
+            try:
+                req = ServiceRequirement(
+                    name=service_name,
+                    type=ServiceType(service_type),
+                    description=service.get("description", f"{service_name} service"),
+                    cpu=service.get("cpu"),
+                    memory=service.get("memory"),
+                    scaling=service.get("scaling"),
+                    environment_variables=service.get("environment_variables"),
+                    secrets=service.get("secrets"),
+                    health_check_path=service.get("health_check_path", "/health"),
+                    port=service.get("port"),
+                    image=service.get("image"),
+                    engine=service.get("engine"),
+                    instance_class=service.get("instance_class"),
+                    storage=service.get("storage")
+                )
+                service_requirements.append(req)
+            except (ValueError, KeyError) as e:
+                # Skip invalid service entries
+                continue
     
-    def _explain_microservices(self, context: Optional[str], constraints: Optional[str]) -> str:
-        """Explain microservices architecture pattern."""
-        return f"""# Microservices Architecture Pattern
+    # If no valid services provided, create a default web service
+    if not service_requirements:
+        default_service = ServiceRequirement(
+            name="webapp",
+            type=ServiceType.ECS,
+            description="React web application with Nginx",
+            cpu=256,
+            memory=512,
+            health_check_path="/",
+            port=80,
+            image="nginx:latest"
+        )
+        service_requirements.append(default_service)
+    
+    # Create networking requirements
+    networking = NetworkingRequirement(
+        pattern=ArchitecturePattern(architecture_pattern),
+        multi_az=True,
+        public_subnets=True,
+        private_subnets=True,
+        database_subnets=any(s.type == ServiceType.RDS for s in service_requirements)
+    )
+    
+    # Create load balancing requirements if needed
+    load_balancing = None
+    if any(s.type in [ServiceType.ECS, ServiceType.EC2] for s in service_requirements):
+        routing_type = "path-based" if architecture_pattern == "microservices" else "simple"
+        load_balancing = LoadBalancingRequirement(
+            routing_type=routing_type,
+            https_redirect=bool(domain)
+        )
+    
+    # Create security requirements
+    security = SecurityRequirement(
+        https_required=bool(domain),
+        certificate_domain=domain,
+        additional_domains=[f"www.{domain}"] if domain else None
+    )
+    
+    # Create scaling requirements
+    scaling = ScalingRequirement(
+        auto_scaling=True,
+        min_capacity=scaling_config.get("min_capacity", 1) if scaling_config else 1,
+        max_capacity=scaling_config.get("max_capacity", 10) if scaling_config else 10,
+        target_cpu=scaling_config.get("target_cpu", 70) if scaling_config else 70,
+        target_memory=scaling_config.get("target_memory", 80) if scaling_config else 80
+    )
+    
+    # Create the complete specification
+    spec = DesignSpecification(
+        project_name=project_name,
+        environment=environment,
+        region=region,
+        services=service_requirements,
+        networking=networking,
+        load_balancing=load_balancing,
+        security=security,
+        scaling=scaling,
+        description=description
+    )
+    
+    # Convert to JSON for handoff
+    return json.dumps(asdict(spec), indent=2, default=str)
 
-## Overview
-Microservices architecture is a method of developing software systems as a suite of independently deployable, small, modular services. Each service runs its own process and communicates via well-defined, lightweight mechanisms.
 
-## Key Characteristics
-- **Decentralized**: Services manage their own data and business logic
-- **Independent Deployment**: Each service can be deployed independently
-- **Technology Diversity**: Different services can use different technologies
-- **Fault Isolation**: Failure in one service doesn't bring down the entire system
-- **Scalability**: Scale individual services based on demand
+def validate_design_specification(spec_json: str) -> Dict[str, Any]:
+    """
+    Validate a design specification for completeness.
+    
+    Args:
+        spec_json: JSON string of the design specification
+        
+    Returns:
+        Validation result with issues and recommendations
+    """
+    
+    try:
+        spec_dict = json.loads(spec_json)
+        issues = []
+        recommendations = []
+        
+        # Check required fields
+        required_fields = ["project_name", "environment", "region", "services"]
+        for field in required_fields:
+            if not spec_dict.get(field):
+                issues.append(f"Missing required field: {field}")
+        
+        # Validate services
+        services = spec_dict.get("services", [])
+        if not services:
+            issues.append("No services defined")
+        
+        for i, service in enumerate(services):
+            if not service.get("name"):
+                issues.append(f"Service {i} missing name")
+            if not service.get("type"):
+                issues.append(f"Service {i} missing type")
+            
+            # Type-specific validations
+            if service.get("type") == "ecs":
+                if not service.get("cpu"):
+                    recommendations.append(f"Service {service.get('name', i)}: Consider specifying CPU allocation")
+                if not service.get("memory"):
+                    recommendations.append(f"Service {service.get('name', i)}: Consider specifying memory allocation")
+                if not service.get("image"):
+                    issues.append(f"ECS service {service.get('name', i)} missing container image")
+            
+            elif service.get("type") == "rds":
+                if not service.get("engine"):
+                    issues.append(f"RDS service {service.get('name', i)} missing engine type")
+                if not service.get("instance_class"):
+                    recommendations.append(f"RDS service {service.get('name', i)}: Consider specifying instance class")
+        
+        # Check networking
+        networking = spec_dict.get("networking")
+        if networking and networking.get("pattern") == "microservices":
+            if len([s for s in services if s.get("type") == "ecs"]) < 2:
+                recommendations.append("Microservices pattern with only one service - consider monolith pattern")
+        
+        # Check security
+        security = spec_dict.get("security")
+        if security and security.get("https_required") and not security.get("certificate_domain"):
+            issues.append("HTTPS required but no certificate domain specified")
+        
+        return {
+            "valid": len(issues) == 0,
+            "issues": issues,
+            "recommendations": recommendations,
+            "service_count": len(services),
+            "architecture_pattern": networking.get("pattern") if networking else "unknown"
+        }
+        
+    except json.JSONDecodeError:
+        return {
+            "valid": False,
+            "issues": ["Invalid JSON format"],
+            "recommendations": [],
+            "service_count": 0,
+            "architecture_pattern": "unknown"
+        }
 
-## Implementation Approach
 
-### 1. Service Design
-- Single Responsibility: Each service has one business capability
-- Database per Service: Each service manages its own data
-- API-First: Well-defined interfaces between services
+def suggest_architecture_improvements(spec_json: str) -> List[str]:
+    """
+    Suggest improvements to the design specification.
+    
+    Args:
+        spec_json: JSON string of the design specification
+        
+    Returns:
+        List of improvement suggestions
+    """
+    
+    try:
+        spec_dict = json.loads(spec_json)
+        suggestions = []
+        
+        services = spec_dict.get("services", [])
+        networking = spec_dict.get("networking", {})
+        environment = spec_dict.get("environment", "")
+        
+        # Environment-specific suggestions
+        if environment == "production":
+            # Check for high availability
+            if not networking.get("multi_az"):
+                suggestions.append("Enable multi-AZ deployment for production high availability")
+            
+            # Check for auto-scaling
+            scaling = spec_dict.get("scaling", {})
+            if not scaling.get("auto_scaling"):
+                suggestions.append("Enable auto-scaling for production workloads")
+            
+            # Check for appropriate instance sizes
+            for service in services:
+                if service.get("type") == "ecs":
+                    cpu = service.get("cpu", 0)
+                    if cpu < 512:
+                        suggestions.append(f"Service {service.get('name')}: Consider larger CPU allocation for production")
+                elif service.get("type") == "rds":
+                    instance_class = service.get("instance_class", "")
+                    if "micro" in instance_class:
+                        suggestions.append(f"Database {service.get('name')}: Consider larger instance class for production")
+        
+        # Architecture pattern suggestions
+        pattern = networking.get("pattern")
+        service_count = len([s for s in services if s.get("type") in ["ecs", "ec2"]])
+        
+        if pattern == "microservices" and service_count == 1:
+            suggestions.append("Single service with microservices pattern - consider monolith pattern for simplicity")
+        elif pattern == "monolith" and service_count > 3:
+            suggestions.append("Multiple services with monolith pattern - consider microservices pattern for better scalability")
+        
+        # Security suggestions
+        security = spec_dict.get("security", {})
+        if not security.get("https_required"):
+            suggestions.append("Consider enabling HTTPS for better security")
+        
+        # Database suggestions
+        rds_services = [s for s in services if s.get("type") == "rds"]
+        if rds_services and not networking.get("database_subnets"):
+            suggestions.append("Consider dedicated database subnets for better security")
+        
+        return suggestions
+        
+    except json.JSONDecodeError:
+        return ["Unable to analyze specification due to invalid JSON format"]
 
-### 2. Communication Patterns
-- **Synchronous**: HTTP/REST for real-time communication
-- **Asynchronous**: Message queues for event-driven communication
-- **API Gateway**: Single entry point for client requests
 
-### 3. Data Management
-- Database per service pattern
-- Event sourcing for data consistency
-- CQRS for read/write separation
-
-## Benefits
-- **Scalability**: Scale services independently
-- **Technology Freedom**: Choose best tech for each service
-- **Team Independence**: Teams can work independently
-- **Fault Tolerance**: Isolated failures
-
-## Challenges
-- **Complexity**: Distributed system complexity
-- **Data Consistency**: Managing transactions across services
-- **Network Latency**: Inter-service communication overhead
-- **Monitoring**: Distributed tracing and logging
-
-## Best Practices
-1. Start with a monolith, then extract services
-2. Design for failure (circuit breakers, retries)
-3. Implement comprehensive monitoring
-4. Use containerization (Docker, Kubernetes)
-5. Implement service discovery
-6. Use API versioning strategies
-
-{f"## Context-Specific Considerations\n{context}" if context else ""}
-{f"## Constraint Analysis\n{constraints}" if constraints else ""}
-
-## Recommended Tools & Technologies
-- **Containers**: Docker, Kubernetes
-- **API Gateway**: Kong, Zuul, Ambassador
-- **Service Mesh**: Istio, Linkerd
-- **Monitoring**: Prometheus, Grafana, Jaeger
-- **Message Queues**: RabbitMQ, Apache Kafka
-"""
-
-    def _explain_event_driven(self, context: Optional[str], constraints: Optional[str]) -> str:
-        """Explain event-driven architecture pattern."""
-        return f"""# Event-Driven Architecture Pattern
-
-## Overview
-Event-driven architecture (EDA) is a software architecture pattern where the flow of the program is determined by events such as user actions, sensor outputs, or message passing from other programs.
-
-## Core Components
-- **Event Producers**: Generate events when something happens
-- **Event Routers**: Route events to appropriate consumers
-- **Event Consumers**: React to events and perform actions
-- **Event Store**: Persistent storage for events
-
-## Event Types
-1. **Domain Events**: Business-significant occurrences
-2. **Integration Events**: Cross-boundary communication
-3. **System Events**: Infrastructure and operational events
-
-## Implementation Patterns
-
-### 1. Event Sourcing
-- Store events as the primary source of truth
-- Rebuild state by replaying events
-- Immutable event log
-
-### 2. CQRS (Command Query Responsibility Segregation)
-- Separate read and write models
-- Commands change state, queries read state
-- Often combined with event sourcing
-
-### 3. Saga Pattern
-- Manage distributed transactions
-- Compensating actions for failure scenarios
-- Choreography vs Orchestration
-
-## Benefits
-- **Loose Coupling**: Components don't need direct knowledge of each other
-- **Scalability**: Asynchronous processing enables better scaling
-- **Flexibility**: Easy to add new event consumers
-- **Auditability**: Complete event history
-
-## Challenges
-- **Complexity**: Understanding event flows
-- **Eventual Consistency**: Data may be temporarily inconsistent
-- **Event Schema Evolution**: Managing changes over time
-- **Debugging**: Tracing issues across event flows
-
-## Best Practices
-1. Design events for business domain
-2. Make events immutable
-3. Include sufficient context in events
-4. Handle duplicate events (idempotency)
-5. Implement proper error handling
-6. Use event versioning strategies
-
-{f"## Context-Specific Considerations\n{context}" if context else ""}
-{f"## Constraint Analysis\n{constraints}" if constraints else ""}
-
-## Technology Stack
-- **Message Brokers**: Apache Kafka, RabbitMQ, AWS SNS/SQS
-- **Event Stores**: EventStore, Apache Kafka, AWS EventBridge
-- **Stream Processing**: Apache Kafka Streams, Apache Flink
-- **Monitoring**: Event tracking, message tracing
-"""
-
-    def _explain_serverless(self, context: Optional[str], constraints: Optional[str]) -> str:
-        """Explain serverless architecture pattern."""
-        return f"""# Serverless Architecture Pattern
-
-## Overview
-Serverless computing is a cloud execution model where the cloud provider manages the infrastructure, automatically allocating resources as needed. You only pay for the actual compute time consumed.
-
-## Core Principles
-- **No Server Management**: Cloud provider handles infrastructure
-- **Event-Driven**: Functions triggered by events
-- **Automatic Scaling**: Scales automatically with demand
-- **Pay-per-Use**: Only pay for actual execution time
-
-## Serverless Components
-
-### 1. Functions as a Service (FaaS)
-- AWS Lambda, Azure Functions, Google Cloud Functions
-- Stateless, short-lived functions
-- Event-triggered execution
-
-### 2. Backend as a Service (BaaS)
-- Managed databases, authentication, storage
-- Third-party services for common functionality
-
-### 3. API Gateway
-- Manage and route API requests
-- Handle authentication, rate limiting, caching
-
-## Architecture Patterns
-
-### 1. Event-Driven Functions
-```
-Event Source → Function → Action
-```
-
-### 2. API-Based Functions
-```
-Client → API Gateway → Function → Database
-```
-
-### 3. Stream Processing
-```
-Data Stream → Processing Function → Output
-```
-
-## Benefits
-- **Cost Efficiency**: Pay only for actual usage
-- **Automatic Scaling**: Handle traffic spikes automatically
-- **Reduced Operations**: No server management
-- **Fast Development**: Focus on business logic
-
-## Challenges
-- **Cold Starts**: Initial latency for function execution
-- **Vendor Lock-in**: Tied to specific cloud provider
-- **Limited Execution Time**: Functions have time limits
-- **Debugging Complexity**: Distributed debugging challenges
-
-## Best Practices
-1. Keep functions small and focused
-2. Minimize cold start impact
-3. Use appropriate triggers and events
-4. Implement proper error handling
-5. Monitor function performance
-6. Design for statelessness
-
-{f"## Context-Specific Considerations\n{context}" if context else ""}
-{f"## Constraint Analysis\n{constraints}" if constraints else ""}
-
-## Technology Recommendations
-- **AWS**: Lambda, API Gateway, DynamoDB, S3
-- **Azure**: Functions, API Management, Cosmos DB
-- **Google Cloud**: Cloud Functions, Cloud Endpoints, Firestore
-- **Monitoring**: CloudWatch, Application Insights, Stackdriver
-"""
-
-    def _explain_generic_pattern(self, pattern_name: str, context: Optional[str], constraints: Optional[str]) -> str:
-        """Provide a generic explanation framework for any pattern."""
-        return f"""# {pattern_name} Architecture Pattern
-
-## Pattern Analysis
-
-I don't have a specific template for "{pattern_name}", but I can provide a general analysis framework:
-
-## Key Questions to Consider:
-1. **What problem does this pattern solve?**
-2. **What are the core components and their responsibilities?**
-3. **How do components interact with each other?**
-4. **What are the benefits and trade-offs?**
-5. **When should you use this pattern?**
-6. **What are common implementation approaches?**
-
-## General Pattern Evaluation Framework:
-
-### Benefits Analysis
-- Performance characteristics
-- Scalability implications
-- Maintainability aspects
-- Development complexity
-
-### Trade-offs Consideration
-- Implementation complexity vs benefits
-- Performance vs flexibility
-- Consistency vs availability
-- Cost vs capabilities
-
-### Implementation Guidance
-- Start with simple implementation
-- Identify key components
-- Define clear interfaces
-- Plan for testing and monitoring
-
-{f"## Context-Specific Analysis\n{context}" if context else ""}
-{f"## Constraint Considerations\n{constraints}" if constraints else ""}
-
-## Recommendation
-For specific guidance on "{pattern_name}", I recommend:
-1. Research the pattern's official documentation
-2. Look for implementation examples in your technology stack
-3. Consider similar patterns that might be applicable
-4. Evaluate if existing patterns can solve your use case
-
-Would you like me to explain a specific aspect of this pattern or suggest alternative patterns that might fit your needs?
-""" 
+# Tool functions that will be registered with the agent
+def design_specification_tool(
+    project_name: str = "",
+    environment: str = "production",
+    region: str = "us-east-1",
+    services: str = "[]",
+    architecture_pattern: str = "simple",
+    domain: str = "",
+    scaling_config: str = "{}",
+    description: str = "",
+    **kwargs
+) -> str:
+    """
+    Create a structured design specification for infrastructure.
+    Use this tool when you've analyzed user requirements and want to create
+    a complete specification for handoff to the PaaS Manifest Generator.
+    
+    Args:
+        project_name: Name of the project (default: "myapp")
+        environment: Environment (dev, staging, production) (default: "production")
+        region: AWS region (e.g., us-east-1) (default: "us-east-1")
+        services: JSON string of service requirements (default: "[]")
+        architecture_pattern: Architecture pattern (microservices, three-tier, monolith) (default: "simple")
+        domain: Domain name for certificates and DNS (optional)
+        scaling_config: JSON string of scaling configuration (optional, default: "{}")
+        description: Description of the infrastructure
+        **kwargs: Additional arguments (ignored for backward compatibility)
+        
+    Returns:
+        Complete design specification in JSON format
+    """
+    
+    try:
+        # Set defaults for empty or missing values
+        if not project_name:
+            project_name = "myapp"
+        if not environment:
+            environment = "production"
+        if not region:
+            region = "us-east-1"
+        if not services:
+            services = "[]"
+        if not architecture_pattern:
+            architecture_pattern = "simple"
+        if not scaling_config:
+            scaling_config = "{}"
+        
+        services_list = json.loads(services)
+        scaling_dict = json.loads(scaling_config) if scaling_config else {}
+        
+        spec = create_design_specification(
+            project_name=project_name,
+            environment=environment,
+            region=region,
+            services=services_list,
+            architecture_pattern=architecture_pattern,
+            domain=domain if domain else None,
+            scaling_config=scaling_dict,
+            description=description
+        )
+        
+        # Validate the specification
+        validation = validate_design_specification(spec)
+        suggestions = suggest_architecture_improvements(spec)
+        
+        result = {
+            "specification": json.loads(spec),
+            "validation": validation,
+            "suggestions": suggestions
+        }
+        
+        return json.dumps(result, indent=2)
+        
+    except json.JSONDecodeError as e:
+        return json.dumps({
+            "error": f"Invalid JSON format in input: {str(e)}",
+            "specification": None,
+            "validation": {"valid": False, "issues": ["Invalid input format"]},
+            "suggestions": []
+        })
+    except Exception as e:
+        return json.dumps({
+            "error": f"Failed to create specification: {str(e)}",
+            "specification": None,
+            "validation": {"valid": False, "issues": ["Specification creation failed"]},
+            "suggestions": []
+        }) 

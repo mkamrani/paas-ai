@@ -90,9 +90,39 @@ def create_designer_handoff():
     )
 
 
-def create_k8s_handoff():
-    """Create handoff tool to K8s Manifest agent."""
+def create_paas_generator_handoff():
+    """Create handoff tool to PaaS Manifest Generator agent."""
     return create_handoff_tool(
-        agent_name="k8s_manifest", 
-        description="Transfer to the K8s Manifest agent for Kubernetes deployment configurations and YAML generation."
-    ) 
+        agent_name="paas_manifest_generator", 
+        description="Transfer to the PaaS Manifest Generator agent for Cool Demo PaaS YAML configuration generation and validation."
+    )
+
+
+# Create a simple handoff function for tool registry
+def handoff_to_agent_tool(agent_name: str, **kwargs):
+    """
+    Transfer control to another specialized agent.
+    Use this when you need to hand off work to a different agent with specific expertise.
+    
+    Args:
+        agent_name: Name of the target agent (designer, paas_manifest_generator)
+        **kwargs: Additional arguments (reason, description, etc.) - all optional
+        
+    Returns:
+        Confirmation message of the handoff
+    """
+    # Extract reason from various possible argument names
+    reason = kwargs.get('reason', '') or kwargs.get('description', '') or kwargs.get('message', '')
+    
+    # Validate agent name
+    valid_agents = ['designer', 'paas_manifest_generator', 'supervisor']
+    if agent_name not in valid_agents:
+        logger.warning(f"Invalid agent name: {agent_name}. Valid agents: {valid_agents}")
+        return f"Error: Invalid agent name '{agent_name}'. Valid agents are: {', '.join(valid_agents)}"
+    
+    if reason:
+        logger.info(f"Transferring to {agent_name}: {reason}")
+        return f"Successfully transferred to {agent_name} agent: {reason}"
+    else:
+        logger.info(f"Transferring control to {agent_name}")
+        return f"Successfully transferred to {agent_name} agent" 

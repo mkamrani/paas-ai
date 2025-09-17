@@ -1,0 +1,12 @@
+url,type,tags,priority
+http://localhost:3000/intro,contextual,"intro,overview,getting-started",10
+http://localhost:3000/dsl/networking,dsl,"networking,vpc,subnets,security-groups",9
+http://localhost:3000/dsl/ec2,dsl,"ec2,virtual-machines,compute",8
+http://localhost:3000/dsl/ecs,dsl,"ecs,containers,fargate",8
+http://localhost:3000/dsl/alb,dsl,"alb,load-balancer,routing",8
+http://localhost:3000/dsl/rds,dsl,"rds,database,postgres,mysql",8
+http://localhost:3000/dsl/route53,dsl,"route53,dns,domain",7
+http://localhost:3000/dsl/acm,dsl,"acm,certificates,ssl,https",7
+http://localhost:3000/guidelines/best-practices,guidelines,"best-practices,security,performance,monitoring",9
+http://localhost:3000/guidelines/how-tos,guidelines,"how-tos,tutorials,examples,step-by-step",9
+http://localhost:3000/guidelines/networking,guidelines,"networking-guidelines,architecture,design",8 

@@ -48,6 +48,8 @@ dependencies = [
     "typing-extensions>=4.8.0",
     "langgraph-supervisor (>=0.0.29,<0.0.30)",
     "langgraph-swarm (>=0.0.14,<0.0.15)",
+    "crawl4ai @ git+https://github.com/unclecode/crawl4ai.git",
+    "langchain-huggingface (>=0.3.1,<0.4.0)",
 ]
 
 # Optional dependencies for different components
@@ -63,6 +65,7 @@ rag = [
     "sentence-transformers>=2.2.2",  # Sentence embeddings
     "openai>=1.6.0",          # OpenAI API client
     "tiktoken>=0.5.1",        # OpenAI tokenizer
+    "langchain-huggingface>=0.1.0",  # HuggingFace embeddings (replaces deprecated community version)
     
     # Document processing
     "langchain>=0.1.0",       # LangChain framework

@@ -12,7 +12,7 @@ from langchain_core.messages import HumanMessage, BaseMessage
 from langchain_openai import ChatOpenAI
 
 from .base_agent import BaseAgent
-from .tool_registry import ToolRegistry
+from .tool_registry import ToolRegistry, AGENT_TOOL_CONFIGS
 from .token_tracking import SessionTokenTracker, TokenCallbackFactory
 from ..config import Config
 from paas_ai.utils.logging import get_logger
@@ -57,11 +57,11 @@ class MultiAgentSystem:
         available_agent_names = ["designer", "paas_manifest_generator"]
         
         # Designer Agent
-        designer_tools = [
+        designer_tools = AGENT_TOOL_CONFIGS.get("designer", [
             "rag_search",
             "design_specification",
             "handoff_to_agent"
-        ]
+        ])
         agents["designer"] = BaseAgent(
             name="designer",
             tool_names=designer_tools,
@@ -71,12 +71,12 @@ class MultiAgentSystem:
         )
         
         # PaaS Manifest Generator Agent
-        paas_tools = [
+        paas_tools = AGENT_TOOL_CONFIGS.get("paas_manifest_generator", [
             "rag_search",
             "paas_manifest_generator",
             "manifest_validation",
             "handoff_to_agent"
-        ]
+        ])
         agents["paas_manifest_generator"] = BaseAgent(
             name="paas_manifest_generator",
             tool_names=paas_tools,

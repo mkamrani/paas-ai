@@ -467,6 +467,10 @@ def generate_paas_manifests(design_spec_json: str) -> str:
         spec = json.loads(design_spec_json)
         files = []
         
+        # Handle both direct spec and wrapped spec formats
+        if "specification" in spec:
+            spec = spec["specification"]
+        
         # Extract specification components
         project_name = spec["project_name"]
         environment = spec["environment"]

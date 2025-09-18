@@ -5,8 +5,8 @@ Agent chat command - Interactive chat session with the RAG agent.
 import click
 from typing import Optional
 
-from ....core.config import load_config, ConfigurationError
-from ....core.agents import RAGAgent
+from paas_ai.core.config import load_config, ConfigurationError
+from paas_ai.core.agents import RAGAgent
 from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.agent.chat")

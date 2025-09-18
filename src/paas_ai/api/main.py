@@ -25,12 +25,12 @@ async def lifespan(app: FastAPI):
     
     # Load configuration and validate system components
     try:
-        from ..core.config import load_config
+        from paas_ai.core.config import load_config
         config = load_config()
         logger.info(f"✅ Configuration loaded with {config.embedding.type} embeddings")
         
         # Test embeddings initialization
-        from ..core.rag.embeddings import EmbeddingsFactory
+        from paas_ai.core.rag.embeddings import EmbeddingsFactory
         embeddings = EmbeddingsFactory.create_embeddings(config.embedding)
         logger.info("✅ Embeddings initialized successfully")
         
@@ -114,17 +114,17 @@ async def health_check() -> HealthStatus:
     
     try:
         # Check configuration loading - use local profile for consistency
-        from ..core.config import load_config
+        from paas_ai.core.config import load_config
         config = load_config()  # Default to local profile
         components["config"] = "healthy"
         
         # Check embeddings
-        from ..core.rag.embeddings import EmbeddingsFactory
+        from paas_ai.core.rag.embeddings import EmbeddingsFactory
         embeddings = EmbeddingsFactory.create_embeddings(config.embedding)
         components["embeddings"] = "healthy"
         
         # Check vectorstore (if exists)
-        from ..core.rag.vectorstore import VectorStoreFactory
+        from paas_ai.core.rag.vectorstore import VectorStoreFactory
         try:
             vectorstore = VectorStoreFactory.load_vectorstore(config.vectorstore, embeddings)
             components["vectorstore"] = "healthy" if vectorstore else "no_data"

@@ -1,16 +1,14 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "paas-ai"
 version = "0.1.0"
 description = "Agentic Platform as a Service Configuration Generator"
 readme = "README.md"
-license = {text = "MIT"}
-authors = [
-    {name = "PaaS AI Team", email = "team@paas-ai.dev"}
-]
+license = "MIT"
+
 keywords = ["paas", "ai", "agent", "kubernetes", "docker", "terraform", "configuration"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -25,166 +23,148 @@ classifiers = [
     "Topic :: System :: Systems Administration",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
-requires-python = ">=3.11,<3.13"
+packages = [{include = "paas_ai", from = "src"}]
 
-# Core dependencies
-dependencies = [
-    # CLI framework
-    "click>=8.1.7",
-    "rich>=13.7.0",           # Rich terminal output
-    "colorama>=0.4.6",        # Cross-platform colored terminal text
-    
-    # Configuration and serialization
-    "pydantic>=2.5.0",       # Data validation and settings
-    "PyYAML>=6.0.1",         # YAML support
-    
-    # File operations and utilities
-    "python-dotenv>=1.0.0", # Environment variable loading
-    
-    # Date and time
-    "python-dateutil>=2.8.2",
-    
-    # Type checking utilities
-    "typing-extensions>=4.8.0",
-    "langgraph-supervisor (>=0.0.29,<0.0.30)",
-    "langgraph-swarm (>=0.0.14,<0.0.15)",
-    "crawl4ai @ git+https://github.com/unclecode/crawl4ai.git",
-    "langchain-huggingface (>=0.3.1,<0.4.0)",
-]
-
-# Optional dependencies for different components
-[project.optional-dependencies]
-# RAG system dependencies
-rag = [
-    # Vector databases
-    "chromadb>=0.4.18",       # ChromaDB vector store
-    "qdrant-client>=1.7.0",   # Qdrant vector store
-    "pinecone-client>=2.2.4", # Pinecone vector store
-    
-    # Embeddings and ML
-    "sentence-transformers>=2.2.2",  # Sentence embeddings
-    "openai>=1.6.0",          # OpenAI API client
-    "tiktoken>=0.5.1",        # OpenAI tokenizer
-    "langchain-huggingface>=0.1.0",  # HuggingFace embeddings (replaces deprecated community version)
-    
-    # Document processing
-    "langchain>=0.1.0",       # LangChain framework
-    "langchain-community>=0.0.10",  # LangChain community integrations
-    "beautifulsoup4>=4.12.2", # HTML parsing
-    "lxml>=4.9.3",            # XML/HTML parser
-    "pypdf>=3.17.0",          # PDF processing
-    "python-docx>=1.1.0",    # Word document processing
-    "python-pptx>=0.6.23",   # PowerPoint processing
-    
-    # Text processing  
-    "nltk>=3.8.1",            # Natural language toolkit
-    "rank-bm25>=0.2.2",       # BM25 ranking
-    
-    # Web scraping
-    "selenium>=4.15.0",       # Web automation
-    "playwright>=1.40.0",     # Modern web automation
-    "requests-html>=0.10.0",  # HTML scraping
-    
-    # Content extraction
-    "trafilatura>=1.6.3",     # Web content extraction
-    "newspaper3k>=0.2.8",     # News article extraction
-]
-
-# Agent framework dependencies
-agent = [
-    "langgraph>=0.0.20",       # LangGraph for agent workflows
-    "langgraph-supervisor>=0.0.29",  # LangGraph supervisor for multi-agent coordination
-    "langchain>=0.1.0",        # LangChain base
-    "langchain-openai>=0.0.2", # OpenAI integration
-    "langchain-anthropic>=0.1.0", # Anthropic integration
-]
-
-# MCP (Model Context Protocol) dependencies
-mcp = [
-    "mcp>=0.1.0",             # MCP client library
-    "websockets>=12.0",        # WebSocket support
-    "psutil>=5.9.6",          # Process monitoring
-]
-
-# API server dependencies
-api = [
-    "fastapi>=0.104.0",       # Modern web framework
-    "uvicorn>=0.24.0",        # ASGI server
-    "python-multipart>=0.0.6", # Form data parsing
-    "jinja2>=3.1.2",          # Template engine
-]
-
-# Database dependencies
-database = [
-    "sqlalchemy>=2.0.23",     # SQL toolkit
-    "alembic>=1.13.0",        # Database migrations
-    "asyncpg>=0.29.0",        # Async PostgreSQL
-    "aiosqlite>=0.19.0",      # Async SQLite
-]
-
-# External integrations
-integrations = [
-    "atlassian-python-api>=3.41.0",  # Confluence API
-    "pygithub>=2.1.1",        # GitHub API
-    "kubernetes>=28.1.0",     # Kubernetes client
-    "docker>=6.1.3",          # Docker client
-    "boto3>=1.34.0",          # AWS SDK
-    "azure-identity>=1.15.0", # Azure authentication
-    "google-cloud-storage>=2.10.0", # Google Cloud
-]
-
-# Development dependencies
-dev = [
-    # Testing
-    "pytest>=7.4.3",
-    "pytest-cov>=4.1.0",
-    
-    # Code quality
-    "black>=23.11.0",         # Code formatting
-    "isort>=5.12.0",          # Import sorting
-    "mypy>=1.7.0",            # Type checking
-]
-
-# All optional dependencies combined
-all = [
-    # RAG dependencies
-    "chromadb>=0.4.18",
-    "qdrant-client>=1.7.0",
-    "sentence-transformers>=2.2.2",
-    "openai>=1.6.0",
-    "langchain>=0.1.0",
-    "beautifulsoup4>=4.12.2",
-    "rank-bm25>=0.2.2",
-    
-    # Agent dependencies  
-    "langgraph>=0.0.20",
-    "langgraph-supervisor>=0.0.29",
-    "langchain-openai>=0.0.2",
-    
-    # MCP dependencies
-    "websockets>=12.0",
-    "psutil>=5.9.6",
-    
-    # API dependencies
-    "fastapi>=0.104.0",
-    "uvicorn>=0.24.0",
-    
-    # Database dependencies
-    "sqlalchemy>=2.0.23",
-    
-    # Integration dependencies
-    "atlassian-python-api>=3.41.0",
-    "kubernetes>=28.1.0",
-]
-
-[project.urls]
+[tool.poetry.urls]
 Homepage = "https://github.com/paas-ai/paas-ai"
 Documentation = "https://docs.paas-ai.dev"
 Repository = "https://github.com/paas-ai/paas-ai.git"
 Issues = "https://github.com/paas-ai/paas-ai/issues"
 
-[project.scripts]
+[tool.poetry.scripts]
 paas-ai = "paas_ai.cli.main:main"
+
+# Core dependencies (minimal for basic CLI functionality)
+[tool.poetry.dependencies]
+python = "^3.11,<3.13"
+
+# CLI framework
+click = "^8.1.7"
+rich = "^13.7.0"
+colorama = "^0.4.6"
+
+# Configuration and serialization
+pydantic = "^2.5.0"
+PyYAML = "^6.0.1"
+
+# File operations and utilities
+python-dotenv = "^1.0.0"
+
+# Date and time
+python-dateutil = "^2.8.2"
+
+# Type checking utilities
+typing-extensions = "^4.8.0"
+
+# RAG system dependencies group
+[tool.poetry.group.rag]
+optional = true
+
+[tool.poetry.group.rag.dependencies]
+# Vector databases
+chromadb = "^1.0.20"
+qdrant-client = "^1.7.0"
+pinecone-client = "^2.2.4"
+
+# Embeddings and ML
+sentence-transformers = "^2.2.2"
+openai = "^1.6.0"
+tiktoken = "^0.7.0"
+langchain-huggingface = "^0.1.0"
+
+# Document processing
+langchain = ">=0.3.0,<0.4.0"
+langchain-community = ">=0.0.10,<0.4.0"
+langchain-chroma = "^0.2.5"
+beautifulsoup4 = "^4.12.2"
+lxml = "^5.3.0"
+pypdf = "^3.17.0"
+python-docx = "^1.1.0"
+python-pptx = "^0.6.23"
+
+# Text processing
+nltk = "^3.8.1"
+rank-bm25 = "^0.2.2"
+faiss-cpu = "^1.12.0"
+unstructured = "^0.18.14"
+markdown = "^3.9"
+
+# Web scraping
+selenium = "^4.15.0"
+playwright = "^1.40.0"
+requests-html = "^0.10.0"
+crawl4ai = {git = "https://github.com/unclecode/crawl4ai.git"}
+
+# Content extraction
+trafilatura = "^1.6.3"
+newspaper3k = "^0.2.8"
+
+# Agent framework dependencies group
+[tool.poetry.group.agent]
+optional = true
+
+[tool.poetry.group.agent.dependencies]
+langgraph = ">=0.6.0,<0.7.0"
+langgraph-supervisor = "^0.0.29"
+langgraph-swarm = "^0.0.14"
+langchain = ">=0.3.0,<0.4.0"
+langchain-openai = "^0.3.33"
+
+# MCP (Model Context Protocol) dependencies group
+[tool.poetry.group.mcp]
+optional = true
+
+[tool.poetry.group.mcp.dependencies]
+# mcp = "^0.1.0"  # Commented out until available
+websockets = "^12.0"
+
+
+# API server dependencies group
+[tool.poetry.group.api]
+optional = true
+
+[tool.poetry.group.api.dependencies]
+fastapi = ">=0.115.0,<0.116.0"
+uvicorn = "^0.24.0"
+python-multipart = "^0.0.6"
+jinja2 = "^3.1.2"
+
+# Database dependencies group
+[tool.poetry.group.database]
+optional = true
+
+[tool.poetry.group.database.dependencies]
+sqlalchemy = "^2.0.23"
+alembic = "^1.13.0"
+asyncpg = "^0.29.0"
+aiosqlite = ">=0.20.0,<1.0"
+
+# External integrations group
+[tool.poetry.group.integrations]
+optional = true
+
+[tool.poetry.group.integrations.dependencies]
+atlassian-python-api = "^3.41.0"
+pygithub = "^2.1.1"
+kubernetes = "^28.1.0"
+docker = "^6.1.3"
+boto3 = "^1.34.0"
+azure-identity = "^1.15.0"
+google-cloud-storage = "^2.10.0"
+
+# Development dependencies group
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
+
+# Code quality
+black = "^23.11.0"
+isort = "^5.12.0"
+mypy = "^1.7.0"
 
 # Development scripts
 [tool.poe.tasks]
@@ -194,13 +174,6 @@ test-integration = "pytest tests/integration -v"
 test-rag = "pytest tests/unit/test_cli/test_commands/test_rag tests/unit/test_core/test_rag -v"
 test-coverage = "pytest --cov=paas_ai --cov-report=html --cov-report=term"
 test-fast = "pytest --no-cov -x"
-
-# Setuptools configuration
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-paas_ai = ["py.typed"]
 
 # Black code formatting
 [tool.black]
@@ -267,10 +240,6 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=paas_ai",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
 ]
 testpaths = ["tests"]
 markers = [
@@ -308,10 +277,3 @@ exclude_lines = [
 [tool.bandit]
 exclude_dirs = ["tests", "test_*"]
 skips = ["B101", "B601"]
-
-[tool.poetry.group.rag.dependencies]
-langchain-chroma = "^0.2.5"
-faiss-cpu = "^1.12.0"
-unstructured = "^0.18.14"
-markdown = "^3.9"
-

@@ -8,8 +8,8 @@ import click
 import json
 
 from paas_ai.utils.logging import get_logger
-from ....core.rag import RAGProcessor, ConfigurationError
-from ....core.config import load_config, ResourceType
+from paas_ai.core.rag import RAGProcessor, ConfigurationError
+from paas_ai.core.config import load_config, ResourceType
 
 
 @click.command()

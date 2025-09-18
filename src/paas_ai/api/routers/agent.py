@@ -21,8 +21,8 @@ from ..models import (
     ErrorResponse
 )
 from ..middleware.security import APIKeyAuth
-from ...core.config import load_config, Config
-from ...core.agents import RAGAgent
+from paas_ai.core.config import load_config, Config
+from paas_ai.core.agents import RAGAgent
 from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.api.agent")

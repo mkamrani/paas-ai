@@ -270,7 +270,7 @@ def load_config_file(config_path: Optional[Path] = None) -> Tuple[ConfigFile, Pa
 def _convert_enums_to_strings(obj: Any) -> Any:
     """Convert enum values to strings recursively for YAML serialization."""
     if isinstance(obj, dict):
-        return {k: _convert_enums_to_strings(v) for k, v in obj.items()}
+        return {_convert_enums_to_strings(k): _convert_enums_to_strings(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [_convert_enums_to_strings(item) for item in obj]
     elif hasattr(obj, 'value'):  # Enum check
@@ -312,7 +312,7 @@ def save_config_file(config_file: ConfigFile, config_path: Optional[Path] = None
 
 def create_sample_config(config_path: Optional[Path] = None) -> Path:
     """
-    Create a sample configuration file with profile-based format.
+    Create a sample configuration file that includes all required sections.
     
     Args:
         config_path: Path to create the config file. Defaults to ~/.paas-ai/config.yaml
@@ -327,27 +327,88 @@ def create_sample_config(config_path: Optional[Path] = None) -> Path:
     config_path.parent.mkdir(parents=True, exist_ok=True)
     
     sample_config = {
-        'current': 'local',  # Use predefined profile by default
+        'current': 'my-custom-profile',
         'profiles': {
             'my-custom-profile': {
+                # Embedding configuration
                 'embedding': {
                     'type': 'sentence_transformers',
                     'model_name': 'all-MiniLM-L6-v2',
                     'params': {}
                 },
+                
+                # Vector store configuration
                 'vectorstore': {
                     'type': 'chroma',
                     'persist_directory': './rag_data/custom',
                     'collection_name': 'custom-knowledge',
                     'params': {}
                 },
+                
+                # Retriever configuration
                 'retriever': {
                     'type': 'similarity',
                     'search_kwargs': {'k': 5},
                     'params': {}
                 },
+                
+                # LLM configuration (REQUIRED)
+                'llm': {
+                    'provider': 'openai',
+                    'model_name': 'gpt-3.5-turbo',
+                    'temperature': 0.0,
+                    'max_tokens': 1000,
+                    'api_key_env_var': 'OPENAI_API_KEY',
+                    'params': {}
+                },
+                
+                # Citation configuration (REQUIRED)
+                'citation': {
+                    'enabled': True,
+                    'verbosity': 'minimal',
+                    'format': 'inline',
+                    'resource_overrides': {},
+                    'include_quotes': True,
+                    'max_quote_length': 150,
+                    'include_confidence': False,
+                    'generate_deep_links': True,
+                    'strategies': {
+                        'dsl': 'technical_citation',
+                        'contextual': 'web_citation',
+                        'guidelines': 'policy_citation',
+                        'domain_rules': 'rule_citation'
+                    },
+                    'base_urls': {}
+                },
+                
+                # Multi-agent configuration (REQUIRED)
+                'multi_agent': {
+                    'enabled': True,
+                    'mode': 'supervisor',
+                    'default_agent': 'designer',
+                    'track_tokens': False,
+                    'token_callback': 'console',
+                    'verbose': False
+                },
+                
+                # Agent configurations (REQUIRED)
+                'agents': {
+                    'designer': {
+                        'model': 'gpt-4o-mini',
+                        'temperature': 0.1
+                    },
+                    'paas_manifest_generator': {
+                        'model': 'gpt-4o-mini',
+                        'temperature': 0.0
+                    }
+                },
+                
+                # Additional configuration fields
                 'batch_size': 32,
-                'validate_urls': True
+                'validate_urls': True,
+                'max_parallel': 5,
+                'timeout': 30,
+                'log_level': 'INFO'
             }
         }
     }

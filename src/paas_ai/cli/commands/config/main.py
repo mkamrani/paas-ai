@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 import click
 
-from ....core.config import (
+from paas_ai.core.config import (
     load_config, 
     load_config_file, 
     save_config_file,
@@ -97,7 +97,7 @@ def show_config(path: bool, profiles: bool, profile: Optional[str]):
                 config_file, _ = load_config_file()
                 
                 # Check if it's a built-in profile
-                from ....core.config.schemas import DEFAULT_CONFIG_PROFILES
+                from paas_ai.core.config.schemas import DEFAULT_CONFIG_PROFILES
                 if profile in DEFAULT_CONFIG_PROFILES:
                     config_obj = DEFAULT_CONFIG_PROFILES[profile]
                     logger.info(f"Built-in Profile: {profile}")

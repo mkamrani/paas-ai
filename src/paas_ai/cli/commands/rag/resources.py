@@ -10,8 +10,8 @@ from typing import Optional, List
 import click
 import asyncio
 
-from ....core.rag import RAGProcessor, create_resource_from_url
-from ....core.config import ResourceType, load_config, ConfigurationError
+from paas_ai.core.rag import RAGProcessor, create_resource_from_url
+from paas_ai.core.config import ResourceType, load_config, ConfigurationError
 from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.rag.resources")

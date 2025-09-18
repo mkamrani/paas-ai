@@ -38,7 +38,7 @@ class TestConfig:
         config = DEFAULT_CONFIGS['local']
         
         assert config.embedding.type == EmbeddingType.SENTENCE_TRANSFORMERS
-        assert config.vectorstore.type == VectorStoreType.FAISS
+        assert config.vectorstore.type == VectorStoreType.CHROMA
         assert config.retriever.type == RetrieverType.SIMILARITY
 
 
@@ -89,7 +89,7 @@ class TestDefaultConfigs:
     def test_get_default_loader_config_web(self):
         """Test getting default loader config for web URLs."""
         config = get_default_loader_config("https://example.com")
-        assert config.type == LoaderType.WEB
+        assert config.type == "crawl4ai_web"
     
     def test_get_default_loader_config_pdf(self):
         """Test getting default loader config for PDF files."""

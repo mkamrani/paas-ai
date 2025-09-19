@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from langchain_core.documents import Document
 
 from ..processing.base import ProcessingContext
-from paas_ai.config.schemas import ResourceType, CitationVerbosity
+from paas_ai.core.config.schemas import ResourceType, CitationVerbosity
 from .models import CitationMetadata, SourceReference
 
 

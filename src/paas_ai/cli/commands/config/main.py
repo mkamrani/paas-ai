@@ -294,7 +294,7 @@ def add_profile(profile_name: str, embedding_type: str, embedding_model: str,
     """Add a new custom profile."""
     try:
         # Check if profile name conflicts with built-in profiles
-        from ....core.config.schemas import DEFAULT_CONFIG_PROFILES
+        from paas_ai.core.config.schemas import DEFAULT_CONFIG_PROFILES
         if profile_name in DEFAULT_CONFIG_PROFILES:
             logger.error(f"Cannot create profile '{profile_name}': name conflicts with built-in profile")
             logger.info(f"Built-in profiles: {list(DEFAULT_CONFIG_PROFILES.keys())}")
@@ -370,7 +370,7 @@ def remove_profile(profile_name: str, confirm: bool):
     """Remove a custom profile."""
     try:
         # Check if profile name is built-in
-        from ....core.config.schemas import DEFAULT_CONFIG_PROFILES
+        from paas_ai.core.config.schemas import DEFAULT_CONFIG_PROFILES
         if profile_name in DEFAULT_CONFIG_PROFILES:
             logger.error(f"Cannot remove built-in profile '{profile_name}'")
             return False
@@ -453,7 +453,7 @@ def validate_config(config_path: Optional[Path], profile: Optional[str]):
                 # Validate specific profile
                 config_file, _ = load_config_file()
                 
-                from ....core.config.schemas import DEFAULT_CONFIG_PROFILES
+                from paas_ai.core.config.schemas import DEFAULT_CONFIG_PROFILES
                 if profile in DEFAULT_CONFIG_PROFILES:
                     config_obj = DEFAULT_CONFIG_PROFILES[profile]
                     logger.success(f"✅ Built-in profile '{profile}' is valid")

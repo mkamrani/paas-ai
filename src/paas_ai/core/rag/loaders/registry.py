@@ -8,7 +8,7 @@ from ..config import LoaderType
 
 # Import all strategies
 from .web import WebLoaderStrategy
-from .crawl4ai_web_strategy import Crawl4AIWebLoaderStrategy
+from .crawl4ai_web import Crawl4AIWebLoaderStrategy
 from .html import HTMLLoaderStrategy
 from .pdf import PDFLoaderStrategy  
 from .markdown import MarkdownLoaderStrategy

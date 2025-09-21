@@ -2,22 +2,8 @@
 SentenceTransformers embedding strategy.
 """
 
-try:
-    # Try to use the new langchain-huggingface package
-    from langchain_huggingface import HuggingFaceEmbeddings
-except ImportError:
-    # Fallback to the deprecated langchain-community version
-    from langchain_community.embeddings import HuggingFaceEmbeddings
-    import warnings
-    warnings.warn(
-        "Using deprecated HuggingFaceEmbeddings from langchain-community. "
-        "Consider installing langchain-huggingface: pip install langchain-huggingface",
-        DeprecationWarning,
-        stacklevel=2
-    )
-
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.embeddings import Embeddings
-
 from .base import EmbeddingStrategy
 from ..config import EmbeddingConfig
 

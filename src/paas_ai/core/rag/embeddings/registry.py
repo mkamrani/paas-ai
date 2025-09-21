@@ -37,4 +37,13 @@ class EmbeddingRegistry:
     @classmethod
     def list_supported_types(cls) -> list[EmbeddingType]:
         """List all supported embedding types."""
-        return list(cls._strategies.keys()) 
+        return list(cls._strategies.keys())
+    
+    @classmethod
+    def reset_to_defaults(cls) -> None:
+        """Reset registry to default strategies (for testing)."""
+        cls._strategies = {
+            EmbeddingType.OPENAI: OpenAIEmbeddingStrategy,
+            EmbeddingType.SENTENCE_TRANSFORMERS: SentenceTransformersEmbeddingStrategy,
+            # TODO: Add remaining strategies (HuggingFace, Cohere, Azure OpenAI)
+        } 

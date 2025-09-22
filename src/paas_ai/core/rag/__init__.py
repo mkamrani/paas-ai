@@ -22,17 +22,8 @@ from .splitters import TextSplitterFactory
 from .embeddings import EmbeddingsFactory
 from .vectorstore import VectorStoreFactory
 from .retrievers import RetrieverFactory
+from .citations import CitationEnricher, CitationFormatter, SourceReference, CitationAwareResult
 
-# Citation system - optional import (requires citations module)
-try:
-    from .citations import CitationEnricher, CitationFormatter, SourceReference, CitationAwareResult
-    _CITATIONS_AVAILABLE = True
-except ImportError:
-    _CITATIONS_AVAILABLE = False
-    CitationEnricher = None
-    CitationFormatter = None
-    SourceReference = None
-    CitationAwareResult = None
 
 __all__ = [
     'Config',
@@ -45,13 +36,8 @@ __all__ = [
     'EmbeddingsFactory', 
     'VectorStoreFactory',
     'RetrieverFactory'
+    'CitationEnricher',
+    'CitationFormatter',
+    'SourceReference', 
+    'CitationAwareResult'
 ]
-
-# Add citation exports if available
-if _CITATIONS_AVAILABLE:
-    __all__.extend([
-        'CitationEnricher',
-        'CitationFormatter',
-        'SourceReference', 
-        'CitationAwareResult'
-    ])

@@ -8,13 +8,10 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-try:
-    from langchain_chroma import Chroma
-except ImportError:
-    from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from .base import VectorStoreStrategy
-from ..config import VectorStoreConfig
+from ...config.schemas import VectorStoreConfig
 
 
 class ChromaVectorStoreStrategy(VectorStoreStrategy):
@@ -57,7 +54,12 @@ class ChromaVectorStoreStrategy(VectorStoreStrategy):
         embeddings: Embeddings
     ) -> Optional[VectorStore]:
         """Load an existing Chroma vector store."""
-        if not config.persist_directory or not config.persist_directory.exists():
+        if not config.persist_directory:
+            return None
+        
+        # Handle both string and Path types
+        persist_dir = Path(config.persist_directory)
+        if not persist_dir.exists():
             return None
         
         try:
@@ -65,7 +67,7 @@ class ChromaVectorStoreStrategy(VectorStoreStrategy):
             return Chroma(
                 embedding_function=embeddings,
                 collection_name=config.collection_name,
-                persist_directory=str(config.persist_directory),
+                persist_directory=str(persist_dir),
                 **params
             )
         except Exception:
@@ -77,5 +79,7 @@ class ChromaVectorStoreStrategy(VectorStoreStrategy):
             raise ValueError("collection_name is required for Chroma")
         
         # Validate collection name format
-        if not config.collection_name.replace('_', '').replace('-', '').isalnum():
+        # Remove hyphens and underscores, then check if remaining characters are alphanumeric
+        cleaned_name = config.collection_name.replace('_', '').replace('-', '')
+        if not cleaned_name.isalnum():
             raise ValueError("collection_name must contain only alphanumeric characters, hyphens, and underscores") 

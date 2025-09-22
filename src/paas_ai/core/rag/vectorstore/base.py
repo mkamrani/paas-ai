@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from ..config import VectorStoreConfig
+from ...config.schemas import VectorStoreConfig
 
 
 class VectorStoreStrategy(ABC):

@@ -102,7 +102,7 @@ class CitationFormatter:
         citation_data = {
             "source": self._extract_domain(source_ref.source_url),
             "url": source_ref.source_url,
-            "type": source_ref.resource_type.value
+            "type": source_ref.resource_type
         }
         
         if source_ref.page_number:

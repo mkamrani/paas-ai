@@ -68,8 +68,8 @@ class CitationEnricher:
                 
                 # Add citation information to document metadata
                 doc.metadata.update({
-                    'citation_reference': source_ref.dict(),
-                    'citation_metadata': citation_metadata.dict(),
+                    'citation_reference': source_ref.model_dump(),
+                    'citation_metadata': citation_metadata.model_dump(),
                     'citation_enabled': True,
                     'citation_verbosity': effective_verbosity.value if hasattr(effective_verbosity, 'value') else effective_verbosity,
                     'citation_strategy': strategy_name

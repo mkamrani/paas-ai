@@ -1,6 +1,6 @@
 # Citation System
 
-A comprehensive citation system that extends the RAG pipeline to provide precise source references, supporting different verbosity levels and resource-specific strategies.
+A citation system that extends the RAG pipeline to provide precise source references, supporting different verbosity levels and resource-specific strategies.
 
 ## Overview
 

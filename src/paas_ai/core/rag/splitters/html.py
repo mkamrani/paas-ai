@@ -38,4 +38,8 @@ class HTMLSplitterStrategy(SplitterStrategy):
                 # Validate HTML tag format
                 tag = header[0].lower()
                 if not tag.startswith('h') or not tag[1:].isdigit():
+                    raise ValueError(f"HTML header tag must be h1-h6, got: {header[0]}")
+                # Validate that the number is between 1-6
+                tag_number = int(tag[1:])
+                if tag_number < 1 or tag_number > 6:
                     raise ValueError(f"HTML header tag must be h1-h6, got: {header[0]}") 

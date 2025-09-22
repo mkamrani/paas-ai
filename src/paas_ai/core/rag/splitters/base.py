@@ -5,6 +5,7 @@ Base strategy interface for text splitters.
 from abc import ABC, abstractmethod
 from typing import List
 from langchain_core.documents import Document
+from langchain_text_splitters.base import TextSplitter
 
 from ..config import SplitterConfig
 
@@ -13,7 +14,7 @@ class SplitterStrategy(ABC):
     """Base strategy interface for text splitters."""
     
     @abstractmethod
-    def create_splitter(self, config: SplitterConfig):
+    def create_splitter(self, config: SplitterConfig) -> TextSplitter:
         """Create a text splitter based on configuration."""
         pass
     

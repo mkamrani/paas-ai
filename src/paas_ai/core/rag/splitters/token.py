@@ -7,6 +7,12 @@ from langchain_text_splitters import TokenTextSplitter
 from .base import SplitterStrategy
 from ..config import SplitterConfig
 
+# Import tiktoken at module level for better testability
+try:
+    import tiktoken
+except ImportError:
+    tiktoken = None
+
 
 class TokenSplitterStrategy(SplitterStrategy):
     """Strategy for token-based text splitting."""
@@ -32,8 +38,9 @@ class TokenSplitterStrategy(SplitterStrategy):
         # Validate encoding if provided
         encoding_name = config.params.get('encoding_name')
         if encoding_name is not None:
+            if tiktoken is None:
+                raise ValueError("tiktoken is required for encoding validation but not installed")
             try:
-                import tiktoken
                 tiktoken.get_encoding(encoding_name)
             except Exception:
                 raise ValueError(f"Invalid encoding: {encoding_name}")

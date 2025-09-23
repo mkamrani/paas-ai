@@ -25,6 +25,12 @@ class FilterStage(ProcessingStage):
         documents = context.documents
         
         if not documents:
+            # Set metadata even when no documents
+            context.metadata.update({
+                'filtered_count': 0,
+                'removed_count': 0,
+                'filter_rules_count': len(self.content_filters) + len(self.metadata_filters)
+            })
             return context
         
         filtered_documents = []

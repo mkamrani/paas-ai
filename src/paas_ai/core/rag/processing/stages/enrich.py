@@ -22,6 +22,12 @@ class EnrichStage(ProcessingStage):
         documents = context.documents
         
         if not documents:
+            # Set metadata even when no documents
+            timestamp = time.time()
+            context.metadata.update({
+                'enriched_at': timestamp,
+                'enricher_count': len(self.custom_enrichers)
+            })
             return context
         
         # Standard metadata enrichment

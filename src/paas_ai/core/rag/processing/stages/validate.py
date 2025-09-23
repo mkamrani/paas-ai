@@ -35,6 +35,17 @@ class ValidateStage(ProcessingStage):
         documents = context.documents
         
         if not documents:
+            # Set metadata even when no documents
+            context.metadata.update({
+                'validated_count': 0,
+                'rejected_count': 0,
+                'validation_rules': {
+                    'type': self.validator_config.type,
+                    'min_length': self.validator_config.min_content_length,
+                    'max_length': self.validator_config.max_content_length,
+                    'skip_empty': self.validator_config.skip_empty
+                }
+            })
             return context
         
         initial_count = len(documents)

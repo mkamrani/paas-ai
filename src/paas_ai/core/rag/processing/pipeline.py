@@ -14,6 +14,8 @@ class ProcessingPipeline:
     """Pipeline for composing and executing processing stages."""
     
     def __init__(self, stages: List[ProcessingStage], name: str = "pipeline"):
+        if stages is None:
+            raise TypeError("stages cannot be None")
         self.stages = stages
         self.name = name
     
@@ -32,7 +34,7 @@ class ProcessingPipeline:
                 name=f"{self.name}_to_{other.name}"
             )
         else:
-            return NotImplemented
+            raise TypeError(f"unsupported operand type(s) for |: '{type(self).__name__}' and '{type(other).__name__}'")
     
     async def process_with_context(self, context: ProcessingContext) -> ProcessingResult:
         """Process using an existing context (allows for pre-injection of enrichers)."""

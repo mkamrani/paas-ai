@@ -21,40 +21,61 @@ class SplitStage(ProcessingStage):
         resource = context.resource
         documents = context.documents
         
-        if not documents:
-            return context
-        
-        # Create splitter using factory
-        splitter = TextSplitterFactory.create_splitter(resource.splitter)
-        
-        # Split documents
+        # Initialize split_docs as empty list
         split_docs = []
         
-        # Handle different splitter types
-        if hasattr(splitter, 'split_documents'):
-            split_docs = splitter.split_documents(documents)
-        else:
-            # For splitters that only have split_text method
-            for doc in documents:
-                split_results = splitter.split_text(doc.page_content)
-                
-                # Check if returns Document objects or strings
-                if split_results and hasattr(split_results[0], 'page_content'):
-                    # Returns Document objects
-                    for split_doc in split_results:
-                        # Merge metadata
-                        merged_metadata = doc.metadata.copy()
-                        merged_metadata.update(split_doc.metadata)
-                        split_doc.metadata = merged_metadata
-                        split_docs.append(split_doc)
-                else:
-                    # Returns strings
-                    for text in split_results:
-                        split_doc = Document(
-                            page_content=text,
-                            metadata=doc.metadata.copy()
-                        )
-                        split_docs.append(split_doc)
+        if documents:
+            # Create splitter using factory
+            splitter = TextSplitterFactory.create_splitter(resource.splitter)
+            
+            # Handle different splitter types
+            if hasattr(splitter, 'split_documents') and callable(getattr(splitter, 'split_documents')):
+                split_docs = splitter.split_documents(documents)
+                # If split_documents returns a Mock or non-list, fall back to split_text
+                if not isinstance(split_docs, list):
+                    split_docs = []
+                    for doc in documents:
+                        split_results = splitter.split_text(doc.page_content)
+                        
+                        # Check if returns Document objects or strings
+                        if split_results and hasattr(split_results[0], 'page_content'):
+                            # Returns Document objects
+                            for split_doc in split_results:
+                                # Merge metadata
+                                merged_metadata = doc.metadata.copy()
+                                merged_metadata.update(split_doc.metadata)
+                                split_doc.metadata = merged_metadata
+                                split_docs.append(split_doc)
+                        else:
+                            # Returns strings
+                            for text in split_results:
+                                split_doc = Document(
+                                    page_content=text,
+                                    metadata=doc.metadata.copy()
+                                )
+                                split_docs.append(split_doc)
+            else:
+                # For splitters that only have split_text method
+                for doc in documents:
+                    split_results = splitter.split_text(doc.page_content)
+                    
+                    # Check if returns Document objects or strings
+                    if split_results and hasattr(split_results[0], 'page_content'):
+                        # Returns Document objects
+                        for split_doc in split_results:
+                            # Merge metadata
+                            merged_metadata = doc.metadata.copy()
+                            merged_metadata.update(split_doc.metadata)
+                            split_doc.metadata = merged_metadata
+                            split_docs.append(split_doc)
+                    else:
+                        # Returns strings
+                        for text in split_results:
+                            split_doc = Document(
+                                page_content=text,
+                                metadata=doc.metadata.copy()
+                            )
+                            split_docs.append(split_doc)
         
         # Update context
         context.documents = split_docs

@@ -4,14 +4,15 @@ RAG resources management commands.
 Provides CLI commands for adding, listing, and managing RAG knowledge base resources.
 """
 
+import asyncio
 import csv
 from pathlib import Path
-from typing import Optional, List
-import click
-import asyncio
+from typing import List, Optional
 
+import click
+
+from paas_ai.core.config import ConfigurationError, ResourceType, load_config
 from paas_ai.core.rag import RAGProcessor, create_resource_from_url
-from paas_ai.core.config import ResourceType, load_config, ConfigurationError
 from paas_ai.utils.logging import get_logger
 
 logger = get_logger("paas_ai.cli.rag.resources")
@@ -25,57 +26,66 @@ def resources_group():
 
 @resources_group.command("add")
 @click.option("--url", required=True, help="URL or file path to add to knowledge base")
-@click.option("--type", "resource_type", 
-              type=click.Choice([t.value for t in ResourceType]),
-              default=ResourceType.DSL.value,
-              help="Type of resource content")
+@click.option(
+    "--type",
+    "resource_type",
+    type=click.Choice([t.value for t in ResourceType]),
+    default=ResourceType.DSL.value,
+    help="Type of resource content",
+)
 @click.option("--tags", default="", help="Comma-separated tags for the resource")
 @click.option("--priority", type=int, default=5, help="Priority level (1-10)")
 @click.option("--config-profile", help="Override config profile for this operation")
-def add_resource(url: str, resource_type: str, tags: str, priority: int, config_profile: Optional[str]):
+def add_resource(
+    url: str, resource_type: str, tags: str, priority: int, config_profile: Optional[str]
+):
     """Add a single resource to the knowledge base."""
     try:
         # Load configuration with fallback hierarchy
         if config_profile:
             # TODO: Implement profile override logic or get rid of the option
             logger.warning(f"Config profile override not yet implemented: {config_profile}")
-        
+
         config = load_config()
         logger.info(f"Using configuration profile with {config.embedding.type} embeddings")
-        
+
         # Create resource
         resource_tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
         resource = create_resource_from_url(
             url=url,
             resource_type=ResourceType(resource_type),
             tags=resource_tags,
-            priority=priority
+            priority=priority,
         )
-        
+
         # Process resource
         processor = RAGProcessor(config)
         results = asyncio.run(processor.add_resources([resource]))
-        
+
         # Report results
-        if results['successful'] > 0:
+        if results["successful"] > 0:
             logger.success(f"Successfully processed {results['successful']} resources")
             logger.info(f"Total documents: {results['total_documents']}")
         else:
             logger.error("Failed to process any resources")
-            return False
-            
+            raise click.ClickException("Failed to process any resources")
+
     except ConfigurationError as e:
         logger.error(f"Configuration error: {e}")
         logger.info("Try creating a config file with: paas-ai config init")
-        return False
+        raise click.ClickException(f"Configuration error: {e}")
     except Exception as e:
         logger.error(f"Failed to add resource: {e}")
-        return False
+        raise click.ClickException(f"Failed to add resource: {e}")
 
 
 @resources_group.command("add-batch")
-@click.option("--csv-file", required=True, type=click.Path(exists=True, path_type=Path),
-              help="CSV file with resources to add")
+@click.option(
+    "--csv-file",
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+    help="CSV file with resources to add",
+)
 @click.option("--config-profile", help="Override config profile for this operation")
 def add_resources_batch(csv_file: Path, config_profile: Optional[str]):
     """Add multiple resources from a CSV file."""
@@ -83,54 +93,54 @@ def add_resources_batch(csv_file: Path, config_profile: Optional[str]):
         # Load configuration
         if config_profile:
             logger.warning(f"Config profile override not yet implemented: {config_profile}")
-        
+
         config = load_config()
         logger.info(f"Using configuration profile with {config.embedding.type} embeddings")
-        
+
         # Parse CSV file
         resources = []
-        with open(csv_file, 'r', newline='') as csvfile:
+        with open(csv_file, "r", newline="") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                url = row.get('url')
-                resource_type = row.get('type', 'dsl')
-                tags = row.get('tags', '').split(',') if row.get('tags') else []
-                priority = int(row.get('priority', 5))
-                
+                url = row.get("url")
+                resource_type = row.get("type", "dsl")
+                tags = row.get("tags", "").split(",") if row.get("tags") else []
+                priority = int(row.get("priority", 5))
+
                 if not url:
                     continue
-                
+
                 resource = create_resource_from_url(
                     url=url,
                     resource_type=ResourceType(resource_type),
                     tags=[tag.strip() for tag in tags if tag.strip()],
-                    priority=priority
+                    priority=priority,
                 )
                 resources.append(resource)
-        
+
         if not resources:
             logger.error("No valid resources found in CSV file")
-            return False
-        
+            raise click.ClickException("No valid resources found in CSV file")
+
         logger.info(f"Found {len(resources)} resources in CSV file")
-        
+
         # Process resources
         processor = RAGProcessor(config)
         results = asyncio.run(processor.add_resources(resources))
-        
+
         # Report results
         logger.success(f"Batch processing completed:")
         logger.info(f"  Successful: {results['successful']}")
         logger.info(f"  Failed: {results['failed']}")
         logger.info(f"  Total documents: {results['total_documents']}")
-        
+
     except ConfigurationError as e:
         logger.error(f"Configuration error: {e}")
         logger.info("Try creating a config file with: paas-ai config init")
-        return False
+        raise click.ClickException(f"Configuration error: {e}")
     except Exception as e:
         logger.error(f"Failed to add resources: {e}")
-        return False
+        raise click.ClickException(f"Failed to add resources: {e}")
 
 
 @resources_group.command("list")
@@ -159,9 +169,11 @@ def clear_resources():
         logger.success("Knowledge base cleared successfully")
     except ConfigurationError as e:
         logger.error(f"Configuration error: {e}")
+        raise click.ClickException(f"Configuration error: {e}")
     except Exception as e:
         logger.error(f"Failed to clear knowledge base: {e}")
+        raise click.ClickException(f"Failed to clear knowledge base: {e}")
 
 
 # For backward compatibility, keep the old function name
-add_resources = add_resource 
+add_resources = add_resource

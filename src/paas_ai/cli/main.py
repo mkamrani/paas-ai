@@ -6,17 +6,18 @@ with proper error handling, logging, and user-friendly output.
 """
 
 import sys
-import click
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
-from paas_ai.utils.logging import get_logger, PaaSLogger
+import click
+
+from paas_ai.utils.logging import PaaSLogger, get_logger
 
 
 # Global CLI configuration
 class CLIContext:
     """Shared context for CLI commands."""
-    
+
     def __init__(self):
         self.logger: Optional[PaaSLogger] = None
         self.verbose: bool = False
@@ -24,19 +25,19 @@ class CLIContext:
         self.config_file: Optional[Path] = None
 
 
-# Create global context object
+# Global context object
 pass_context = click.make_pass_decorator(CLIContext, ensure=True)
 
 
 def validate_verbosity_options(ctx, param, value):
     """Validate that verbose and quiet options are mutually exclusive."""
-    if not hasattr(ctx, '_verbosity_options'):
+    if not hasattr(ctx, "_verbosity_options"):
         ctx._verbosity_options = {}
-    
+
     # Store the current option if it's set
     if value:
         ctx._verbosity_options[param.name] = value
-    
+
     # Check for conflicts
     if len(ctx._verbosity_options) > 1:
         options_used = [f"--{name}" for name in ctx._verbosity_options.keys()]
@@ -44,43 +45,36 @@ def validate_verbosity_options(ctx, param, value):
             f"Options {' and '.join(options_used)} are mutually exclusive. "
             f"Please use only one verbosity option."
         )
-    
+
     return value
 
 
 @click.group()
 @click.option(
-    '--verbose', '-v',
+    "--verbose",
+    "-v",
     is_flag=True,
     callback=validate_verbosity_options,
-    help='Enable verbose output (DEBUG level logging)'
+    help="Enable verbose output (DEBUG level logging)",
 )
 @click.option(
-    '--quiet', '-q',
+    "--quiet",
+    "-q",
     is_flag=True,
     callback=validate_verbosity_options,
-    help='Suppress all output except errors'
+    help="Suppress all output except errors",
 )
 @click.option(
-    '--config', '-c',
+    "--config",
+    "-c",
     type=click.Path(exists=True, path_type=Path),
-    help='Path to configuration file'
+    help="Path to configuration file",
 )
 @click.option(
-    '--log-file',
-    type=click.Path(path_type=Path),
-    help='Path to log file for persistent logging'
+    "--log-file", type=click.Path(path_type=Path), help="Path to log file for persistent logging"
 )
-@click.option(
-    '--no-color',
-    is_flag=True,
-    help='Disable colored output'
-)
-@click.option(
-    '--no-emoji',
-    is_flag=True,
-    help='Disable emoji indicators'
-)
+@click.option("--no-color", is_flag=True, help="Disable colored output")
+@click.option("--no-emoji", is_flag=True, help="Disable emoji indicators")
 @click.version_option(version="0.1.0", prog_name="paas-ai")
 @pass_context
 def cli(
@@ -94,10 +88,10 @@ def cli(
 ):
     """
     🚀 PaaS AI - Agentic Platform as a Service Configuration Generator
-    
-    Generate production-ready PaaS configurations using intelligent agents
-    that understand your requirements and best practices.
-    
+
+    Generate configuration with custom DSL for PaaS using agents
+    that understand your requirements and follow the best practices and guidelines.
+
       Examples:
     paas-ai generate --from-confluence https://wiki.company.com/requirements
     paas-ai rag sync --incremental
@@ -110,7 +104,7 @@ def cli(
         log_level = "DEBUG"
     else:
         log_level = "INFO"
-    
+
     # Initialize logger
     ctx.logger = get_logger(
         name="paas_ai.cli",
@@ -120,15 +114,15 @@ def cli(
         colors=not no_color,
         emojis=not no_emoji,
     )
-    
+
     # Store configuration
     ctx.verbose = verbose
     ctx.quiet = quiet
     ctx.config_file = config
-    
+
     # Set CLI context for logging
     ctx.logger.set_context("CLI")
-    
+
     if verbose:
         ctx.logger.debug("CLI initialized with verbose logging")
         if config:
@@ -136,37 +130,31 @@ def cli(
 
 
 @cli.command()
+@click.option("--from-confluence", help="Generate from Confluence page URL")
 @click.option(
-    '--from-confluence',
-    help='Generate from Confluence page URL'
-)
-@click.option(
-    '--from-file',
+    "--from-file",
     type=click.Path(exists=True, path_type=Path),
-    help='Generate from local requirements file'
+    help="Generate from local requirements file",
 )
 @click.option(
-    '--output', '-o',
+    "--output",
+    "-o",
     type=click.Path(path_type=Path),
-    default=Path('./generated'),
-    help='Output directory for generated configurations'
+    default=Path("./generated"),
+    help="Output directory for generated configurations",
 )
 @click.option(
-    '--platform',
-    type=click.Choice(['kubernetes', 'docker', 'terraform', 'all']),
-    default='kubernetes',
-    help='Target platform for configuration generation'
+    "--platform",
+    type=click.Choice(["kubernetes", "docker", "terraform", "all"]),
+    default="kubernetes",
+    help="Target platform for configuration generation",
 )
 @click.option(
-    '--template',
-    type=click.Choice(['webapp', 'api', 'microservice', 'ml-pipeline']),
-    help='Use predefined template'
+    "--template",
+    type=click.Choice(["webapp", "api", "microservice", "ml-pipeline"]),
+    help="Use predefined template",
 )
-@click.option(
-    '--dry-run',
-    is_flag=True,
-    help='Show what would be generated without creating files'
-)
+@click.option("--dry-run", is_flag=True, help="Show what would be generated without creating files")
 @pass_context
 def generate(
     ctx: CLIContext,
@@ -179,10 +167,10 @@ def generate(
 ):
     """
     🏗️ Generate PaaS configurations from requirements.
-    
+
     Use the intelligent agent to generate production-ready configurations
     based on requirements from various sources.
-    
+
     Examples:
       paas-ai generate --from-confluence https://wiki.company.com/spec --platform kubernetes
       paas-ai generate --template webapp --output ./my-app
@@ -190,55 +178,55 @@ def generate(
     """
     logger = ctx.logger
     logger.info("Starting configuration generation")
-    
+
     # Validate input sources
     sources = [from_confluence, from_file, template]
     if not any(sources):
         logger.error("No input source specified. Use --from-confluence, --from-file, or --template")
         sys.exit(1)
-    
+
     if sum(bool(source) for source in sources) > 1:
         logger.error("Please specify only one input source")
         sys.exit(1)
-    
+
     try:
         logger.set_context("GENERATE")
-        
+
         # Determine source type and log it
         if from_confluence:
             logger.info(f"Generating from Confluence: {from_confluence}")
             logger.progress("Fetching requirements from Confluence...")
             # TODO: Implement Confluence integration
-            
+
         elif from_file:
             logger.info(f"Generating from file: {from_file}")
             logger.progress("Parsing requirements file...")
             # TODO: Implement file parsing
-            
+
         elif template:
             logger.info(f"Generating from template: {template}")
             logger.progress("Loading template configuration...")
             # TODO: Implement template loading
-        
+
         # Show dry run information
         if dry_run:
             logger.warning("DRY RUN MODE - No files will be created")
-        
+
         logger.progress(f"Targeting platform: {platform}")
         logger.progress(f"Output directory: {output}")
-        
+
         # TODO: Implement actual generation logic
         logger.info("🤖 Initializing agent...")
         logger.progress("Analyzing requirements...")
         logger.progress("Generating configurations...")
         logger.progress("Validating generated configs...")
-        
+
         if not dry_run:
             output.mkdir(parents=True, exist_ok=True)
             logger.success(f"Configurations generated successfully in {output}")
         else:
             logger.info("Dry run completed - configurations would be generated")
-        
+
     except Exception as e:
         logger.exception(f"Configuration generation failed: {e}")
         sys.exit(1)
@@ -247,27 +235,14 @@ def generate(
 
 
 @cli.command()
-@click.argument(
-    'files',
-    nargs=-1,
-    type=click.Path(exists=True, path_type=Path),
-    required=True
-)
+@click.argument("files", nargs=-1, type=click.Path(exists=True, path_type=Path), required=True)
 @click.option(
-    '--platform',
-    type=click.Choice(['kubernetes', 'docker', 'terraform']),
-    help='Platform to validate against'
+    "--platform",
+    type=click.Choice(["kubernetes", "docker", "terraform"]),
+    help="Platform to validate against",
 )
-@click.option(
-    '--fix',
-    is_flag=True,
-    help='Automatically fix validation errors where possible'
-)
-@click.option(
-    '--strict',
-    is_flag=True,
-    help='Enable strict validation (fail on warnings)'
-)
+@click.option("--fix", is_flag=True, help="Automatically fix validation errors where possible")
+@click.option("--strict", is_flag=True, help="Enable strict validation (fail on warnings)")
 @pass_context
 def validate(
     ctx: CLIContext,
@@ -278,9 +253,9 @@ def validate(
 ):
     """
     ✅ Validate PaaS configuration files.
-    
+
     Validate configuration files against schemas and best practices.
-    
+
     Examples:
       paas-ai validate deployment.yaml service.yaml
       paas-ai validate --platform kubernetes *.yaml
@@ -288,25 +263,25 @@ def validate(
     """
     logger = ctx.logger
     logger.info(f"Validating {len(files)} file(s)")
-    
+
     try:
         logger.set_context("VALIDATE")
-        
+
         for file_path in files:
             logger.progress(f"Validating {file_path}")
-            
+
             # TODO: Implement validation logic
             if platform:
                 logger.debug(f"Using {platform} validation rules")
-            
+
             # Simulate validation results
             logger.success(f"✓ {file_path.name} - Valid")
-            
+
             if fix:
                 logger.info(f"🔧 Applied auto-fixes to {file_path.name}")
-        
+
         logger.success("All files validated successfully")
-        
+
     except Exception as e:
         logger.exception(f"Validation failed: {e}")
         sys.exit(1)
@@ -315,27 +290,15 @@ def validate(
 
 
 @cli.command()
+@click.option("--target", type=click.Choice(["kubernetes", "docker"]), help="Deployment target")
 @click.option(
-    '--target',
-    type=click.Choice(['kubernetes', 'docker']),
-    help='Deployment target'
-)
-@click.option(
-    '--config-dir',
+    "--config-dir",
     type=click.Path(exists=True, path_type=Path),
-    default=Path('./generated'),
-    help='Directory containing configuration files'
+    default=Path("./generated"),
+    help="Directory containing configuration files",
 )
-@click.option(
-    '--dry-run',
-    is_flag=True,
-    help='Show deployment plan without executing'
-)
-@click.option(
-    '--force',
-    is_flag=True,
-    help='Force deployment even with warnings'
-)
+@click.option("--dry-run", is_flag=True, help="Show deployment plan without executing")
+@click.option("--force", is_flag=True, help="Force deployment even with warnings")
 @pass_context
 def deploy(
     ctx: CLIContext,
@@ -346,39 +309,39 @@ def deploy(
 ):
     """
     🚀 Deploy configurations to target platform.
-    
+
     Deploy generated configurations to the specified platform.
-    
+
     Examples:
       paas-ai deploy --target kubernetes
       paas-ai deploy --dry-run --config-dir ./configs
     """
     logger = ctx.logger
     logger.info("Starting deployment process")
-    
+
     try:
         logger.set_context("DEPLOY")
-        
+
         if not target:
             logger.error("No deployment target specified. Use --target")
             sys.exit(1)
-        
+
         if dry_run:
             logger.warning("DRY RUN MODE - No actual deployment will occur")
-        
+
         logger.progress(f"Preparing {target} deployment...")
         logger.progress(f"Loading configurations from {config_dir}")
-        
+
         # TODO: Implement deployment logic
         logger.info("🔍 Analyzing deployment requirements...")
         logger.progress("Validating target environment...")
         logger.progress("Applying configurations...")
-        
+
         if not dry_run:
             logger.success("Deployment completed successfully")
         else:
             logger.info("Dry run completed - deployment plan validated")
-        
+
     except Exception as e:
         logger.exception(f"Deployment failed: {e}")
         sys.exit(1)
@@ -386,11 +349,12 @@ def deploy(
         logger.clear_context()
 
 
-# Import and register command groups
-from .commands.rag import rag
+from .commands.agent import agent_group
 from .commands.config import config
 from .commands.mcp import mcp
-from .commands.agent import agent_group
+
+# Import and register command groups
+from .commands.rag import rag
 
 # Add command groups
 cli.add_command(rag)
@@ -412,4 +376,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

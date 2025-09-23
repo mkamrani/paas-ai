@@ -31,7 +31,9 @@ test-fast:
 	poetry run pytest --no-cov -x
 
 test-coverage:
-	poetry run pytest --cov=paas_ai --cov-report=html --cov-report=term
+	poetry run coverage run --source=src -m pytest
+	poetry run coverage report --show-missing
+	poetry run coverage html
 
 # Installation commands
 install:

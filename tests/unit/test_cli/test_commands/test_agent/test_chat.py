@@ -16,101 +16,13 @@ import pytest
 from click.testing import CliRunner
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.paas_ai.cli.commands.agent.chat import (
-    _extract_chunk_content,
-    _stream_response,
-    chat_command,
-)
+from src.paas_ai.cli.commands.agent.chat import _stream_response, chat_command
 from src.paas_ai.core.config import ConfigurationError
 from src.paas_ai.core.config.schemas import DEFAULT_CONFIG_PROFILES
 
 
-class TestExtractChunkContent:
-    """Test the _extract_chunk_content helper function."""
-
-    def test_extract_chunk_content_with_messages(self):
-        """Test extracting content from chunk with messages."""
-        # Mock message with content and type
-        mock_message = Mock()
-        mock_message.content = "Test response"
-        mock_message.type = "ai"
-
-        chunk = {"messages": [mock_message]}
-
-        result = _extract_chunk_content(chunk)
-        assert result == "Test response"
-
-    def test_extract_chunk_content_with_dict_messages(self):
-        """Test extracting content from chunk with dict messages."""
-        chunk = {"messages": [{"type": "ai", "content": "Test response"}]}
-
-        result = _extract_chunk_content(chunk)
-        assert result == "Test response"
-
-    def test_extract_chunk_content_with_direct_content(self):
-        """Test extracting content from chunk with direct content."""
-        chunk = {"content": "Direct content"}
-
-        result = _extract_chunk_content(chunk)
-        assert result == "Direct content"
-
-    def test_extract_chunk_content_with_agent_data(self):
-        """Test extracting content from chunk with agent-specific data."""
-        mock_message = Mock()
-        mock_message.content = "Agent response"
-
-        chunk = {"designer": {"messages": [mock_message]}}
-
-        result = _extract_chunk_content(chunk)
-        assert result == "Agent response"
-
-    def test_extract_chunk_content_with_dict_agent_messages(self):
-        """Test extracting content from chunk with dict agent messages."""
-        chunk = {"paas_manifest_generator": {"messages": [{"content": "Generator response"}]}}
-
-        result = _extract_chunk_content(chunk)
-        assert result == "Generator response"
-
-    def test_extract_chunk_content_empty_chunk(self):
-        """Test extracting content from empty chunk."""
-        chunk = {}
-
-        result = _extract_chunk_content(chunk)
-        assert result == ""
-
-    def test_extract_chunk_content_none_chunk(self):
-        """Test extracting content from None chunk."""
-        result = _extract_chunk_content(None)
-        assert result == ""
-
-    def test_extract_chunk_content_non_dict_chunk(self):
-        """Test extracting content from non-dict chunk."""
-        result = _extract_chunk_content("not a dict")
-        assert result == ""
-
-
 class TestStreamResponse:
     """Test the _stream_response helper function."""
-
-    def test_stream_response_with_question(self):
-        """Test streaming response with question."""
-        mock_agent = Mock()
-        mock_agent.ask_stream.return_value = ["Hello", " world", "!"]
-
-        result = _stream_response(mock_agent, question="Test question")
-
-        assert result == "Hello world!"
-        mock_agent.ask_stream.assert_called_once_with("Test question")
-
-    def test_stream_response_with_direct_streaming(self):
-        """Test streaming response with direct streaming."""
-        mock_agent = Mock()
-        mock_agent.ask_stream_direct.return_value = ["Direct", " response"]
-
-        result = _stream_response(mock_agent, question="Test question", direct=True)
-
-        assert result == "Direct response"
-        mock_agent.ask_stream_direct.assert_called_once_with("Test question")
 
     def test_stream_response_with_messages(self):
         """Test streaming response with messages."""
@@ -118,7 +30,7 @@ class TestStreamResponse:
         mock_agent.chat_stream.return_value = ["Chat", " response"]
 
         messages = [HumanMessage(content="Hello")]
-        result = _stream_response(mock_agent, messages=messages)
+        result = _stream_response(mock_agent, messages)
 
         assert result == "Chat response"
         mock_agent.chat_stream.assert_called_once_with(messages, thread_id=None)
@@ -126,35 +38,38 @@ class TestStreamResponse:
     def test_stream_response_with_debug_mode(self):
         """Test streaming response with debug mode."""
         mock_agent = Mock()
-        mock_agent.ask_stream.return_value = ["Debug", " response"]
+        mock_agent.chat_stream.return_value = ["Debug", " response"]
 
-        result = _stream_response(mock_agent, question="Test question", debug=True)
+        messages = [HumanMessage(content="Test question")]
+        result = _stream_response(mock_agent, messages, debug=True)
 
         assert result == "Debug response"
-        mock_agent.ask_stream.assert_called_once_with("Test question")
+        mock_agent.chat_stream.assert_called_once_with(messages, thread_id=None)
 
     def test_stream_response_with_error_token(self):
         """Test streaming response with error token."""
         mock_agent = Mock()
-        mock_agent.ask_stream.return_value = ["\n❌ Error occurred"]
+        mock_agent.chat_stream.return_value = ["\n❌ Error occurred"]
 
-        result = _stream_response(mock_agent, question="Test question")
+        messages = [HumanMessage(content="Test question")]
+        result = _stream_response(mock_agent, messages)
 
         assert result == "\n❌ Error occurred"
 
     def test_stream_response_exception_handling(self):
         """Test streaming response exception handling."""
         mock_agent = Mock()
-        mock_agent.ask_stream.side_effect = Exception("Streaming error")
+        mock_agent.chat_stream.side_effect = Exception("Streaming error")
 
+        messages = [HumanMessage(content="Test question")]
         with pytest.raises(Exception, match="Streaming error"):
-            _stream_response(mock_agent, question="Test question")
+            _stream_response(mock_agent, messages)
 
     def test_stream_response_no_parameters(self):
         """Test streaming response with no parameters."""
         mock_agent = Mock()
 
-        with pytest.raises(ValueError, match="Either question or messages must be provided"):
+        with pytest.raises(TypeError):
             _stream_response(mock_agent)
 
 
@@ -583,7 +498,7 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.side_effect = Exception("Agent processing error")
+            mock_agent.chat_stream.side_effect = Exception("Agent processing error")
             mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: question then exit
@@ -832,7 +747,7 @@ class TestChatCommandIntegration:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["First response"]
+            mock_agent.chat_stream.return_value = ["First response"]
             mock_agent.chat_stream.return_value = ["Second response"]
             mock_agent.chat.return_value = "Second response"
             mock_agent.get_available_tools.return_value = [
@@ -898,7 +813,7 @@ class TestChatCommandIntegration:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["Debug", " response"]
+            mock_agent.chat_stream.return_value = ["Debug", " response"]
             mock_agent.chat_stream.return_value = ["Debug", " response"]
             mock_agent.chat.return_value = "Debug response"
             mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
@@ -913,39 +828,6 @@ class TestChatCommandIntegration:
             # Verify
             assert result.exit_code == 0
             assert "Debug response" in result.output
-
-    def test_chat_command_with_direct_streaming(self):
-        """Test chat command with direct streaming enabled."""
-        runner = CliRunner()
-
-        with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
-        ) as mock_multi_agent_class, patch(
-            "src.paas_ai.cli.commands.agent.chat.click.prompt"
-        ) as mock_prompt:
-            # Setup mocks
-            mock_config = Mock()
-            mock_config.embedding.type = "openai"
-            mock_config.multi_agent.track_tokens = False
-            mock_config.multi_agent.verbose = False
-            mock_load_config.return_value = mock_config
-
-            mock_agent = Mock()
-            mock_agent.ask_stream_direct.return_value = ["Direct", " response"]
-            mock_agent.chat_stream.return_value = ["Direct", " response"]
-            mock_agent.chat.return_value = "Direct response"
-            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
-            mock_multi_agent_class.return_value = mock_agent
-
-            # Mock user input and exit
-            mock_prompt.side_effect = ["Test question", "exit"]
-
-            # Run command with direct streaming
-            result = runner.invoke(chat_command, ["--direct-streaming"])
-
-            # Verify
-            assert result.exit_code == 0
-            assert "Direct response" in result.output
 
     def test_chat_command_error_recovery(self):
         """Test chat command error recovery and graceful handling."""
@@ -964,7 +846,7 @@ class TestChatCommandIntegration:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.side_effect = Exception("Processing error")
+            mock_agent.chat_stream.side_effect = Exception("Processing error")
             mock_agent.ask.return_value = "Fallback response"
             mock_agent.chat_stream.side_effect = Exception("Processing error")
             mock_agent.chat.return_value = "Fallback response"

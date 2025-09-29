@@ -1,0 +1,126 @@
+current: example_custom_profile
+profiles:
+  example_custom_profile:
+    embedding:
+      type: sentence_transformers
+      model_name: all-MiniLM-L6-v2
+      params: {}
+    vectorstore:
+      type: chroma
+      persist_directory: rag_data/chroma_citation
+      collection_name: example_custom_profile
+      params: {}
+    retriever:
+      type: similarity
+      search_kwargs:
+        k: 5
+      params: {}
+    llm:
+      provider: openai
+      model_name: gpt-3.5-turbo
+      temperature: 0.1
+      api_key_env_var: OPENAI_API_KEY
+      params: {}
+    citation:
+      enabled: true
+      verbosity: detailed
+      format: inline
+      resource_overrides:
+        dsl: forensic
+        contextual: standard
+        guidelines: detailed
+        domain_rules: forensic
+      include_quotes: true
+      max_quote_length: 150
+      include_confidence: true
+      generate_deep_links: true
+      strategies:
+        dsl: technical_citation
+        contextual: web_citation
+        guidelines: policy_citation
+        domain_rules: rule_citation
+      base_urls: {}
+    batch_size: 16
+    validate_urls: true
+    max_parallel: 5
+    timeout: 30
+    log_level: INFO
+    multi_agent:
+      enabled: true
+      mode: supervisor
+      default_agent: designer
+      track_tokens: false
+      verbose: false
+      persistence:
+        enabled: true
+        checkpointer_type: sqlite
+        sqlite_path: ~/.paas-ai/conversations.db
+        max_history_length: 20
+        cleanup_interval: 3600
+    agents:
+      designer:
+        model: gpt-4o-mini
+        temperature: 0.1
+      k8s_manifest:
+        model: gpt-4o-mini
+        temperature: 0.0
+  default:
+    embedding:
+      type: openai
+      model_name: text-embedding-3-small
+      params: {}
+    vectorstore:
+      type: chroma
+      persist_directory: ./rag_data/default
+      collection_name: default_knowledge
+      params: {}
+    retriever:
+      type: similarity
+      search_kwargs:
+        k: 5
+      params: {}
+    llm:
+      provider: openai
+      model_name: gpt-3.5-turbo
+      temperature: 0.1
+      api_key_env_var: OPENAI_API_KEY
+      params: {}
+    citation:
+      enabled: true
+      verbosity: standard
+      format: inline
+      resource_overrides: {}
+      include_quotes: true
+      max_quote_length: 150
+      include_confidence: false
+      generate_deep_links: true
+      strategies:
+        dsl: technical_citation
+        contextual: web_citation
+        guidelines: policy_citation
+        domain_rules: rule_citation
+      base_urls: {}
+    batch_size: 32
+    validate_urls: true
+    max_parallel: 5
+    timeout: 30
+    log_level: INFO
+    multi_agent:
+      enabled: true
+      mode: supervisor
+      default_agent: designer
+      track_tokens: false
+      verbose: false
+      persistence:
+        enabled: true
+        checkpointer_type: sqlite
+        sqlite_path: ~/.paas-ai/conversations.db
+        max_history_length: 20
+        cleanup_interval: 3600
+    agents:
+      designer:
+        model: gpt-4o-mini
+        temperature: 0.1
+      paas_manifest_generator:
+        model: gpt-4o-mini
+        temperature: 0.0

@@ -7,7 +7,6 @@ This directory contains comprehensive unit tests for the CLI agent commands modu
 ```
 test_agent/
 ├── __init__.py              # Test package initialization
-├── test_ask.py              # Tests for the ask command
 ├── test_chat.py             # Tests for the chat command
 ├── test_init.py             # Tests for module initialization
 ├── test_integration.py      # Integration tests for complete workflows
@@ -17,21 +16,13 @@ test_agent/
 
 ## Test Coverage
 
-### test_ask.py
-Tests for the `ask` command including:
-- **Basic functionality**: Successful command execution, response handling
-- **Configuration options**: `--show-config`, `--config-profile` flags
-- **Error handling**: Configuration errors, agent processing errors
-- **Edge cases**: Empty questions, long questions, special characters, unicode
-- **Integration**: Full workflow testing, different config profiles
-- **Output formatting**: Response display, configuration summary display
 
 ### test_chat.py
 Tests for the `chat` command including:
 - **Interactive functionality**: Chat session management, conversation history
 - **Streaming responses**: Real-time response streaming, debug mode
 - **Special commands**: `history`, `clear`, `tools`, `config`, `tokens`, `exit`
-- **Configuration options**: `--show-config`, `--max-history`, `--debug-streaming`, `--direct-streaming`
+- **Configuration options**: `--show-config`, `--max-history`, `--debug-streaming`
 - **Error handling**: Streaming failures, fallback mechanisms, keyboard interrupts
 - **Edge cases**: Empty input, whitespace input, history trimming
 - **Integration**: Full conversation workflows, multi-agent configuration
@@ -92,9 +83,6 @@ poetry run pytest tests/unit/test_cli/test_commands/test_agent/ -v
 
 ### Run specific test files:
 ```bash
-# Test ask command
-poetry run pytest tests/unit/test_cli/test_commands/test_agent/test_ask.py -v
-
 # Test chat command
 poetry run pytest tests/unit/test_cli/test_commands/test_agent/test_chat.py -v
 
@@ -116,13 +104,6 @@ The tests use the following key dependencies:
 - **langchain_core.messages**: Message types for chat testing
 
 ## Key Features Tested
-
-### Ask Command Features
-- Single question processing
-- Configuration display
-- Profile-based configuration
-- Error handling and recovery
-- Response formatting and display
 
 ### Chat Command Features
 - Interactive chat sessions

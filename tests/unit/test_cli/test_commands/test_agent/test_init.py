@@ -3,10 +3,9 @@ Unit tests for agent module initialization.
 
 Tests all components of the agent module initialization including:
 - agent_group function
-- Command registration
+- Chat command registration
 - Module structure and imports
 - Click group functionality
-- Command discovery and execution
 """
 
 from unittest.mock import Mock, patch
@@ -15,7 +14,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from src.paas_ai.cli.commands.agent import agent_group, ask_command, chat_command
+from src.paas_ai.cli.commands.agent import agent_group, chat_command
 
 
 class TestAgentGroup:
@@ -40,16 +39,9 @@ class TestAgentGroup:
         # Get command names
         command_names = list(agent_group.commands.keys())
 
-        # Should have ask and chat commands
-        assert "ask" in command_names
+        # Should have chat command only
         assert "chat" in command_names
-        assert len(command_names) == 2
-
-    def test_agent_group_ask_command_registered(self):
-        """Test that ask command is properly registered."""
-        ask_cmd = agent_group.commands.get("ask")
-        assert ask_cmd is not None
-        assert ask_cmd == ask_command
+        assert len(command_names) == 1
 
     def test_agent_group_chat_command_registered(self):
         """Test that chat command is properly registered."""
@@ -65,19 +57,7 @@ class TestAgentGroup:
         result = runner.invoke(agent_group, ["--help"])
         assert result.exit_code == 0
         assert "Agent commands for testing RAG integration" in result.output
-        assert "ask" in result.output
         assert "chat" in result.output
-
-    def test_agent_group_ask_command_help(self):
-        """Test that ask command help works through group."""
-        runner = CliRunner()
-
-        result = runner.invoke(agent_group, ["ask", "--help"])
-        assert result.exit_code == 0
-        assert "Ask the RAG agent a question" in result.output
-        assert "--question" in result.output or "-q" in result.output
-        assert "--config-profile" in result.output
-        assert "--show-config" in result.output
 
     def test_agent_group_chat_command_help(self):
         """Test that chat command help works through group."""
@@ -98,27 +78,16 @@ class TestAgentGroup:
         assert result.exit_code != 0
         assert "No such command" in result.output or "Error" in result.output
 
-    def test_agent_group_no_command_specified(self):
-        """Test that agent group shows help when no command specified."""
-        runner = CliRunner()
-
-        result = runner.invoke(agent_group, [])
-        assert result.exit_code == 2  # Click groups return exit code 2 when no command specified
-        assert "Agent commands for testing RAG integration" in result.output
-        assert "ask" in result.output
-        assert "chat" in result.output
-
 
 class TestAgentModuleImports:
     """Test agent module imports and structure."""
 
     def test_agent_module_imports(self):
         """Test that agent module imports work correctly."""
-        from src.paas_ai.cli.commands.agent import agent_group, ask_command, chat_command
+        from src.paas_ai.cli.commands.agent import agent_group, chat_command
 
         # Verify imports are not None
         assert agent_group is not None
-        assert ask_command is not None
         assert chat_command is not None
 
     def test_agent_module_all_exports(self):
@@ -139,36 +108,11 @@ class TestAgentModuleImports:
 
         assert agent_module.__doc__ is not None
         assert "Agent CLI commands module" in agent_module.__doc__
-        assert "ask: Ask the agent a single question" in agent_module.__doc__
         assert "chat: Start an interactive chat session" in agent_module.__doc__
 
 
 class TestAgentCommandIntegration:
     """Test integration between agent commands and group."""
-
-    def test_ask_command_through_group(self):
-        """Test ask command execution through agent group."""
-        runner = CliRunner()
-
-        with patch("src.paas_ai.cli.commands.agent.ask.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.ask.RAGAgent"
-        ) as mock_rag_agent_class:
-            # Setup mocks
-            mock_config = Mock()
-            mock_config.embedding.type = "openai"
-            mock_load_config.return_value = mock_config
-
-            mock_agent = Mock()
-            mock_agent.ask.return_value = "Test response"
-            mock_rag_agent_class.return_value = mock_agent
-
-            # Run command through group
-            result = runner.invoke(agent_group, ["ask", "-q", "Test question"])
-
-            # Verify
-            assert result.exit_code == 0
-            assert "AGENT RESPONSE:" in result.output
-            assert "Test response" in result.output
 
     def test_chat_command_through_group(self):
         """Test chat command execution through agent group."""
@@ -210,92 +154,15 @@ class TestAgentCommandIntegration:
         result = runner.invoke(agent_group, ["--help"])
 
         assert result.exit_code == 0
-        # Should show both commands
-        assert "ask" in result.output
+        # Should show chat command
         assert "chat" in result.output
 
-        # Should show command descriptions
-        assert "Ask the RAG agent a question" in result.output
+        # Should show command description
         assert "Start an interactive chat session" in result.output
 
-    def test_agent_group_command_aliases(self):
-        """Test that agent group commands work with different invocation styles."""
-        runner = CliRunner()
 
-        with patch("src.paas_ai.cli.commands.agent.ask.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.ask.RAGAgent"
-        ) as mock_rag_agent_class:
-            # Setup mocks
-            mock_config = Mock()
-            mock_config.embedding.type = "openai"
-            mock_load_config.return_value = mock_config
-
-            mock_agent = Mock()
-            mock_agent.ask.return_value = "Test response"
-            mock_rag_agent_class.return_value = mock_agent
-
-            # Test different ways to invoke ask command
-            test_cases = [
-                ["ask", "-q", "Test question"],
-                ["ask", "--question", "Test question"],
-            ]
-
-            for args in test_cases:
-                result = runner.invoke(agent_group, args)
-                assert result.exit_code == 0
-                assert "AGENT RESPONSE:" in result.output
-                assert "Test response" in result.output
-
-
-class TestAgentModuleEdgeCases:
-    """Test edge cases for agent module."""
-
-    def test_agent_group_with_invalid_options(self):
-        """Test agent group with invalid options."""
-        runner = CliRunner()
-
-        # Test with invalid global options
-        result = runner.invoke(agent_group, ["--invalid-option"])
-        assert result.exit_code != 0
-
-    def test_agent_group_with_missing_required_args(self):
-        """Test agent group with missing required arguments."""
-        runner = CliRunner()
-
-        # Test ask command without required question
-        result = runner.invoke(agent_group, ["ask"])
-        assert result.exit_code != 0
-        assert "Missing option" in result.output or "Error" in result.output
-
-    def test_agent_group_command_error_handling(self):
-        """Test agent group error handling."""
-        runner = CliRunner()
-
-        with patch("src.paas_ai.cli.commands.agent.ask.load_config") as mock_load_config:
-            # Setup mock to raise error
-            mock_load_config.side_effect = Exception("Test error")
-
-            # Run command through group
-            result = runner.invoke(agent_group, ["ask", "-q", "Test question"])
-
-            # Should handle error gracefully
-            assert result.exit_code == 0
-            assert "❌ Failed to process question: Test error" in result.output
-
-    def test_agent_group_import_error_handling(self):
-        """Test agent group handles import errors gracefully."""
-        # This test would require mocking import failures, which is complex
-        # For now, we just verify the module can be imported
-        try:
-            from src.paas_ai.cli.commands.agent import agent_group
-
-            assert agent_group is not None
-        except ImportError as e:
-            pytest.fail(f"Agent module import failed: {e}")
-
-
-class TestAgentModuleCompatibility:
-    """Test compatibility and interoperability of agent module."""
+class TestAgentCommandCompatibility:
+    """Test compatibility of agent commands."""
 
     def test_agent_group_click_compatibility(self):
         """Test that agent group is compatible with click framework."""
@@ -312,11 +179,6 @@ class TestAgentModuleCompatibility:
 
     def test_agent_commands_click_compatibility(self):
         """Test that agent commands are compatible with click framework."""
-        # Test ask command
-        assert hasattr(ask_command, "params")
-        assert hasattr(ask_command, "invoke")
-        assert hasattr(ask_command, "get_help")
-
         # Test chat command
         assert hasattr(chat_command, "params")
         assert hasattr(chat_command, "invoke")
@@ -324,16 +186,13 @@ class TestAgentModuleCompatibility:
 
     def test_agent_group_command_consistency(self):
         """Test that agent group commands are consistent."""
-        # Both commands should be click commands
-        assert isinstance(ask_command, click.Command)
+        # Chat command should be click command
         assert isinstance(chat_command, click.Command)
 
-        # Both should have proper help text
-        assert ask_command.help is not None
+        # Should have proper help text
         assert chat_command.help is not None
 
-        # Both should be properly registered
-        assert "ask" in agent_group.commands
+        # Should be properly registered
         assert "chat" in agent_group.commands
 
     def test_agent_module_structure_consistency(self):
@@ -342,7 +201,6 @@ class TestAgentModuleCompatibility:
 
         # Should have expected attributes
         assert hasattr(agent_module, "agent_group")
-        assert hasattr(agent_module, "ask_command")
         assert hasattr(agent_module, "chat_command")
 
         # Should have proper docstring

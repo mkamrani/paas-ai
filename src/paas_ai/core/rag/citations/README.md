@@ -154,7 +154,7 @@ Agents automatically receive citation information and are prompted to include it
 
 ```python
 # Agent responses now include citations
-response = agent.ask("How do I configure pod resource limits?")
+response = agent.chat([HumanMessage(content="How do I configure pod resource limits?")])
 
 # Response includes:
 # "To configure pod resource limits, you need to specify resources in your container spec [Kubernetes Docs, Pod Configuration]: 'spec.containers[].resources.limits'"

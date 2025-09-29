@@ -14,66 +14,14 @@ from paas_ai.utils.logging import get_logger
 logger = get_logger("paas_ai.cli.agent.chat")
 
 
-def _extract_chunk_content(chunk) -> str:
-    """
-    Extract displayable content from a streaming chunk.
-
-    Args:
-        chunk: Streaming chunk from the coordination system
-
-    Returns:
-        str: Content to display, or empty string if no displayable content
-    """
-    # Debug: print the chunk structure
-    logger.debug(f"Processing chunk: {chunk}")
-
-    # Handle different chunk formats from LangGraph
-    if isinstance(chunk, dict):
-        # Check for message content in various formats
-        if "messages" in chunk:
-            messages = chunk["messages"]
-            if messages and isinstance(messages, list):
-                # Get the last message if it's an AI message
-                last_msg = messages[-1]
-                if hasattr(last_msg, "content") and hasattr(last_msg, "type"):
-                    if last_msg.type == "ai" or getattr(last_msg, "role", None) == "assistant":
-                        return last_msg.content
-                elif isinstance(last_msg, dict):
-                    if last_msg.get("type") == "ai" or last_msg.get("role") == "assistant":
-                        return last_msg.get("content", "")
-
-        # Check for direct content
-        if "content" in chunk:
-            return chunk["content"]
-
-        # Check for agent-specific content
-        for agent_name in ["designer", "paas_manifest_generator", "supervisor"]:
-            if agent_name in chunk:
-                agent_data = chunk[agent_name]
-                if isinstance(agent_data, dict) and "messages" in agent_data:
-                    messages = agent_data["messages"]
-                    if messages and isinstance(messages, list):
-                        last_msg = messages[-1]
-                        if hasattr(last_msg, "content"):
-                            return last_msg.content
-                        elif isinstance(last_msg, dict) and "content" in last_msg:
-                            return last_msg["content"]
-
-    return ""
-
-
-def _stream_response(
-    agent, question=None, messages=None, debug=False, direct=False, thread_id=None
-):
+def _stream_response(agent: MultiAgentSystem, messages, debug=False, thread_id=None):
     """
     Stream response from agent and return the complete response.
 
     Args:
         agent: The agent instance
-        question: Question for ask_stream (if not using chat)
-        messages: Messages for chat_stream (if not using ask)
+        messages: Messages for chat_stream
         debug: If True, show detailed debugging info
-        direct: If True, use direct streaming (bypass coordinator)
         thread_id: Thread ID for conversation persistence
 
     Returns:
@@ -82,17 +30,8 @@ def _stream_response(
     response_parts = []
 
     try:
-        # Choose streaming method based on parameters
-        if question is not None:
-            if direct:
-                stream = agent.ask_stream_direct(question)
-            else:
-                stream = agent.ask_stream(question)
-        elif messages is not None:
-            # For chat, use streaming with thread persistence
-            stream = agent.chat_stream(messages, thread_id=thread_id)
-        else:
-            raise ValueError("Either question or messages must be provided")
+        # For chat, use streaming with thread persistence
+        stream = agent.chat_stream(messages, thread_id=thread_id)
 
         token_count = 0
         for token in stream:
@@ -110,7 +49,7 @@ def _stream_response(
                 response_parts.append(token)
                 break
 
-            # Display the token immediately (real streaming!)
+            # Display the token immediately
             if not debug:
                 click.echo(token, nl=False)
             response_parts.append(token)
@@ -139,15 +78,11 @@ def _stream_response(
 @click.option(
     "--debug-streaming", is_flag=True, help="Debug streaming chunks (shows raw chunk data)"
 )
-@click.option(
-    "--direct-streaming", is_flag=True, help="Use direct agent streaming (bypass coordinator)"
-)
 def chat_command(
     config_profile: Optional[str],
     show_config: bool,
     thread_id: Optional[str],
     debug_streaming: bool,
-    direct_streaming: bool,
 ):
     """
     Start an interactive chat session with persistent conversation history.
@@ -248,16 +183,16 @@ def chat_command(
         while True:
             try:
                 # Get user input
-                question = click.prompt(click.style("You", fg="blue", bold=True), type=str)
+                user_input = click.prompt(click.style("You", fg="blue", bold=True), type=str)
 
                 # Handle special commands
-                if question.lower() in ["exit", "quit", "bye"]:
+                if user_input.lower() in ["exit", "quit", "bye"]:
                     click.echo(click.style("\n👋 Thanks for chatting! Goodbye!", fg="green"))
                     break
 
                 # History and clearing are handled by LangGraph persistence
 
-                if question.lower() == "tools":
+                if user_input.lower() == "tools":
                     tools = agent.get_available_tools()
                     click.echo(click.style("\n🔧 AVAILABLE TOOLS:", fg="cyan", bold=True))
                     click.echo("=" * 40)
@@ -271,7 +206,7 @@ def chat_command(
                         click.echo()
                     continue
 
-                if question.lower() == "config":
+                if user_input.lower() == "config":
                     config_summary = agent.get_config_summary()
                     click.echo(click.style("\n⚙️  CURRENT CONFIGURATION:", fg="cyan", bold=True))
                     click.echo("=" * 40)
@@ -288,7 +223,7 @@ def chat_command(
                     click.echo("=" * 40 + "\n")
                     continue
 
-                if question.lower() == "tokens":
+                if user_input.lower() == "tokens":
                     if hasattr(agent, "config") and agent.config.multi_agent.track_tokens:
                         token_summary = agent.get_token_session_summary()
                         click.echo(click.style("\n🪙 TOKEN USAGE SUMMARY:", fg="cyan", bold=True))
@@ -325,11 +260,11 @@ def chat_command(
                     continue
 
                 # Skip empty questions
-                if not question.strip():
+                if not user_input.strip():
                     continue
 
                 # Create user message (LangGraph will handle persistence)
-                user_message = HumanMessage(content=question)
+                user_message = HumanMessage(content=user_input)
 
                 # Get agent response using conversation history
                 click.echo(click.style("🤔 Agent is thinking...", fg="yellow"))
@@ -341,11 +276,10 @@ def chat_command(
                 # Stream the response
                 try:
                     # Use chat with single message - LangGraph will load conversation history automatically
-                    response = _stream_response(
+                    _stream_response(
                         agent,
                         messages=[user_message],
                         debug=debug_streaming,
-                        direct=direct_streaming,
                         thread_id=thread_id,
                     )
 
@@ -353,6 +287,7 @@ def chat_command(
 
                 except Exception as e:
                     # Fallback to non-streaming if streaming fails
+                    logger.error(f"Streaming failed, falling back to standard mode: {e}")
                     click.echo(
                         click.style(
                             f"\n⚠️ Streaming failed, falling back to standard mode: {e}",
@@ -363,8 +298,6 @@ def chat_command(
                     # Fallback to non-streaming with thread persistence
                     response = agent.chat([user_message], thread_id=thread_id)
                     click.echo(f"{response}\n")
-
-                # LangGraph automatically manages conversation history via checkpointer
 
                 # Display response (response already shown during streaming)
                 session_count += 1

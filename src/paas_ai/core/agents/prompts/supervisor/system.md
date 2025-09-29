@@ -151,6 +151,16 @@ User: "Design and deploy infrastructure for my e-commerce platform"
 - Ensure Designer provides complete, implementable specifications
 - Verify Generator produces deployable configurations
 - Check that all user requirements are addressed
+- If agents get stuck or fail repeatedly, help them use human assistance tools
+
+### **Human-in-the-Loop Management**
+- Monitor for repeated failures or agents getting stuck in loops
+- When agents struggle (3+ attempts), guide them to use the `human_assistance` tool
+- The `human_assistance` tool can handle any type of help needed: clarification, debugging, confirmation, guidance
+- Facilitate communication between human users and agents when needed
+- Don't let agents retry indefinitely - escalate to human assistance proactively
+
+**Example guidance**: "I see you're having trouble with the manifest generator. Please use the `human_assistance` tool to ask for help with this specific error."
 
 ## Success Criteria
 

@@ -154,7 +154,7 @@ version = "0.21.0"
 description = "asyncio bridge to the standard sqlite3 module"
 optional = false
 python-versions = ">=3.9"
-groups = ["database", "rag"]
+groups = ["main", "database", "rag"]
 files = [
     {file = "aiosqlite-0.21.0-py3-none-any.whl", hash = "sha256:2549cf4057f95f53dcba16f2b64e8e2791d7e1adedb13197dd8ed77bb226d7d0"},
     {file = "aiosqlite-0.21.0.tar.gz", hash = "sha256:131bb8056daa3bc875608c631c678cda73922a2d4ba8aec373b19f18c17e7aa3"},
@@ -227,7 +227,7 @@ version = "4.10.0"
 description = "High-level concurrency and networking framework on top of asyncio or Trio"
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "api", "rag"]
+groups = ["main", "agent", "api", "rag"]
 files = [
     {file = "anyio-4.10.0-py3-none-any.whl", hash = "sha256:60e474ac86736bbfd6f210f7a61218939c318f43f9972497381f1c5e930ed3d1"},
     {file = "anyio-4.10.0.tar.gz", hash = "sha256:3f3fae35c96039744587aa5b8371e7e8e603c0702999535961dd336026973ba6"},
@@ -797,7 +797,7 @@ version = "2025.8.3"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.7"
-groups = ["agent", "integrations", "rag"]
+groups = ["main", "agent", "integrations", "rag"]
 files = [
     {file = "certifi-2025.8.3-py3-none-any.whl", hash = "sha256:f6c12493cfb1b06ba2ff328595af9350c65d6644968e5d3a2ffd78699af217a5"},
     {file = "certifi-2025.8.3.tar.gz", hash = "sha256:e564105f78ded564e3ae7c923924435e1daa7463faeab5bb932bc53ffae63407"},
@@ -914,7 +914,7 @@ version = "3.4.3"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 optional = false
 python-versions = ">=3.7"
-groups = ["agent", "integrations", "rag"]
+groups = ["main", "agent", "integrations", "rag"]
 files = [
     {file = "charset_normalizer-3.4.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:fb7f67a1bfa6e40b438170ebdc8158b78dc465a5a67b6dde178a46987b244a72"},
     {file = "charset_normalizer-3.4.3-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:cc9370a2da1ac13f0153780040f465839e6cccb4a1e44810124b4e22483c93fe"},
@@ -2185,7 +2185,7 @@ version = "0.16.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
 optional = false
 python-versions = ">=3.8"
-groups = ["agent", "api", "rag"]
+groups = ["main", "agent", "api", "rag"]
 files = [
     {file = "h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"},
     {file = "h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1"},
@@ -2293,7 +2293,7 @@ version = "1.0.9"
 description = "A minimal low-level HTTP client."
 optional = false
 python-versions = ">=3.8"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55"},
     {file = "httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8"},
@@ -2371,7 +2371,7 @@ version = "0.28.1"
 description = "The next generation HTTP client."
 optional = false
 python-versions = ">=3.8"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"},
     {file = "httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc"},
@@ -2505,7 +2505,7 @@ version = "3.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
 optional = false
 python-versions = ">=3.6"
-groups = ["agent", "api", "integrations", "rag"]
+groups = ["main", "agent", "api", "integrations", "rag"]
 files = [
     {file = "idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"},
     {file = "idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9"},
@@ -2731,7 +2731,7 @@ version = "1.33"
 description = "Apply JSON-Patches (RFC 6902)"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade"},
     {file = "jsonpatch-1.33.tar.gz", hash = "sha256:9fcd4009c41e6d12348b4a0ff2563ba56a2923a7dfee731d004e212e1ee5030c"},
@@ -2758,7 +2758,7 @@ version = "3.0.0"
 description = "Identify specific nodes in a JSON document (RFC 6901)"
 optional = false
 python-versions = ">=3.7"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "jsonpointer-3.0.0-py2.py3-none-any.whl", hash = "sha256:13e088adc14fca8b6aa8177c044e12701e6ad4b28ff10e65f2267a90109c9942"},
     {file = "jsonpointer-3.0.0.tar.gz", hash = "sha256:2b2d729f2091522d61c3b31f82e11870f60b68f43fbc705cb76bf4b832af59ef"},
@@ -2932,7 +2932,7 @@ version = "0.3.76"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "langchain_core-0.3.76-py3-none-any.whl", hash = "sha256:46e0eb48c7ac532432d51f8ca1ece1804c82afe9ae3dcf027b867edadf82b3ec"},
     {file = "langchain_core-0.3.76.tar.gz", hash = "sha256:71136a122dd1abae2c289c5809d035cf12b5f2bb682d8a4c1078cd94feae7419"},
@@ -3040,7 +3040,7 @@ version = "2.1.1"
 description = "Library with base interfaces for LangGraph checkpoint savers."
 optional = false
 python-versions = ">=3.9"
-groups = ["agent"]
+groups = ["main", "agent"]
 files = [
     {file = "langgraph_checkpoint-2.1.1-py3-none-any.whl", hash = "sha256:5a779134fd28134a9a83d078be4450bbf0e0c79fdf5e992549658899e6fc5ea7"},
     {file = "langgraph_checkpoint-2.1.1.tar.gz", hash = "sha256:72038c0f9e22260cb9bff1f3ebe5eb06d940b7ee5c1e4765019269d4f21cf92d"},
@@ -3049,6 +3049,41 @@ files = [
 [package.dependencies]
 langchain-core = ">=0.2.38"
 ormsgpack = ">=1.10.0"
+
+[[package]]
+name = "langgraph-checkpoint-postgres"
+version = "2.0.23"
+description = "Library with a Postgres implementation of LangGraph checkpoint saver."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "langgraph_checkpoint_postgres-2.0.23-py3-none-any.whl", hash = "sha256:d85b53c2efbd8d36d7bb8ca3491ed5601fddaf4f37b0e6eb961639a8edb33873"},
+    {file = "langgraph_checkpoint_postgres-2.0.23.tar.gz", hash = "sha256:0962daa924eaa564380429742df217287ac579b377aae6c1abad9f1c2cfbee53"},
+]
+
+[package.dependencies]
+langgraph-checkpoint = ">=2.0.21,<3.0.0"
+orjson = ">=3.10.1"
+psycopg = ">=3.2.0"
+psycopg-pool = ">=3.2.0"
+
+[[package]]
+name = "langgraph-checkpoint-sqlite"
+version = "2.0.11"
+description = "Library with a SQLite implementation of LangGraph checkpoint saver."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "langgraph_checkpoint_sqlite-2.0.11-py3-none-any.whl", hash = "sha256:11c40d93225ce99fa2800332c97b16280addf9f15274def32c4d547955290d3f"},
+    {file = "langgraph_checkpoint_sqlite-2.0.11.tar.gz", hash = "sha256:e9337204c27b01a29edff65c1ecb7da0ca8ac7f1bd66b405617459043ac6c3ed"},
+]
+
+[package.dependencies]
+aiosqlite = ">=0.20"
+langgraph-checkpoint = ">=2.0.21,<3.0.0"
+sqlite-vec = ">=0.1.6"
 
 [[package]]
 name = "langgraph-prebuilt"
@@ -3120,7 +3155,7 @@ version = "0.4.25"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "langsmith-0.4.25-py3-none-any.whl", hash = "sha256:adb61784ff58e65f0290ba45770626219fb06a776e69fbcf98aec580478b4686"},
     {file = "langsmith-0.4.25.tar.gz", hash = "sha256:56f0c45810384fba37582ca17fdbcf6ead51934d26d72672e5a810452c0d4ae3"},
@@ -4510,7 +4545,7 @@ version = "3.11.3"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "orjson-3.11.3-cp310-cp310-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:29cb1f1b008d936803e2da3d7cba726fc47232c45df531b29edf0b232dd737e7"},
     {file = "orjson-3.11.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:97dceed87ed9139884a55db8722428e27bd8452817fbf1869c58b49fecab1120"},
@@ -4603,7 +4638,7 @@ version = "1.10.0"
 description = "Fast, correct Python msgpack library supporting dataclasses, datetimes, and numpy"
 optional = false
 python-versions = ">=3.9"
-groups = ["agent"]
+groups = ["main", "agent"]
 files = [
     {file = "ormsgpack-1.10.0-cp310-cp310-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:8a52c7ce7659459f3dc8dec9fd6a6c76f855a0a7e2b61f26090982ac10b95216"},
     {file = "ormsgpack-1.10.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:060f67fe927582f4f63a1260726d019204b72f460cf20930e6c925a1d129f373"},
@@ -4681,7 +4716,7 @@ version = "25.0"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.8"
-groups = ["agent", "dev", "integrations", "rag"]
+groups = ["main", "agent", "dev", "integrations", "rag"]
 files = [
     {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
     {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
@@ -5170,6 +5205,45 @@ files = [
 [package.extras]
 dev = ["abi3audit", "black (==24.10.0)", "check-manifest", "coverage", "packaging", "pylint", "pyperf", "pypinfo", "pytest", "pytest-cov", "pytest-xdist", "requests", "rstcheck", "ruff", "setuptools", "sphinx", "sphinx_rtd_theme", "toml-sort", "twine", "virtualenv", "vulture", "wheel"]
 test = ["pytest", "pytest-xdist", "setuptools"]
+
+[[package]]
+name = "psycopg"
+version = "3.2.10"
+description = "PostgreSQL database adapter for Python"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "psycopg-3.2.10-py3-none-any.whl", hash = "sha256:ab5caf09a9ec42e314a21f5216dbcceac528e0e05142e42eea83a3b28b320ac3"},
+    {file = "psycopg-3.2.10.tar.gz", hash = "sha256:0bce99269d16ed18401683a8569b2c5abd94f72f8364856d56c0389bcd50972a"},
+]
+
+[package.dependencies]
+typing-extensions = {version = ">=4.6", markers = "python_version < \"3.13\""}
+tzdata = {version = "*", markers = "sys_platform == \"win32\""}
+
+[package.extras]
+binary = ["psycopg-binary (==3.2.10) ; implementation_name != \"pypy\""]
+c = ["psycopg-c (==3.2.10) ; implementation_name != \"pypy\""]
+dev = ["ast-comments (>=1.1.2)", "black (>=24.1.0)", "codespell (>=2.2)", "dnspython (>=2.1)", "flake8 (>=4.0)", "isort-psycopg", "isort[colors] (>=6.0)", "mypy (>=1.14)", "pre-commit (>=4.0.1)", "types-setuptools (>=57.4)", "types-shapely (>=2.0)", "wheel (>=0.37)"]
+docs = ["Sphinx (>=5.0)", "furo (==2022.6.21)", "sphinx-autobuild (>=2021.3.14)", "sphinx-autodoc-typehints (>=1.12)"]
+pool = ["psycopg-pool"]
+test = ["anyio (>=4.0)", "mypy (>=1.14)", "pproxy (>=2.7)", "pytest (>=6.2.5)", "pytest-cov (>=3.0)", "pytest-randomly (>=3.5)"]
+
+[[package]]
+name = "psycopg-pool"
+version = "3.2.6"
+description = "Connection Pool for Psycopg"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "psycopg_pool-3.2.6-py3-none-any.whl", hash = "sha256:5887318a9f6af906d041a0b1dc1c60f8f0dda8340c2572b74e10907b51ed5da7"},
+    {file = "psycopg_pool-3.2.6.tar.gz", hash = "sha256:0f92a7817719517212fbfe2fd58b8c35c1850cdd2a80d36b581ba2085d9148e5"},
+]
+
+[package.dependencies]
+typing-extensions = ">=4.6"
 
 [[package]]
 name = "pyasn1"
@@ -6375,7 +6449,7 @@ version = "2.32.5"
 description = "Python HTTP for Humans."
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "integrations", "rag"]
+groups = ["main", "agent", "integrations", "rag"]
 files = [
     {file = "requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6"},
     {file = "requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf"},
@@ -6452,7 +6526,7 @@ version = "1.0.0"
 description = "A utility belt for advanced users of python-requests"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6"},
     {file = "requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06"},
@@ -7026,7 +7100,7 @@ version = "1.3.1"
 description = "Sniff out which async library your code is running under"
 optional = false
 python-versions = ">=3.7"
-groups = ["agent", "api", "rag"]
+groups = ["main", "agent", "api", "rag"]
 files = [
     {file = "sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"},
     {file = "sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc"},
@@ -7165,6 +7239,21 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "sqlite-vec"
+version = "0.1.6"
+description = ""
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "sqlite_vec-0.1.6-py3-none-macosx_10_6_x86_64.whl", hash = "sha256:77491bcaa6d496f2acb5cc0d0ff0b8964434f141523c121e313f9a7d8088dee3"},
+    {file = "sqlite_vec-0.1.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:fdca35f7ee3243668a055255d4dee4dea7eed5a06da8cad409f89facf4595361"},
+    {file = "sqlite_vec-0.1.6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7b0519d9cd96164cd2e08e8eed225197f9cd2f0be82cb04567692a0a4be02da3"},
+    {file = "sqlite_vec-0.1.6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux1_x86_64.whl", hash = "sha256:823b0493add80d7fe82ab0fe25df7c0703f4752941aee1c7b2b02cec9656cb24"},
+    {file = "sqlite_vec-0.1.6-py3-none-win_amd64.whl", hash = "sha256:c65bcfd90fa2f41f9000052bcb8bb75d38240b2dae49225389eca6c3136d3f0c"},
+]
+
+[[package]]
 name = "starlette"
 version = "0.46.2"
 description = "The little ASGI library that shines."
@@ -7206,7 +7295,7 @@ version = "9.1.2"
 description = "Retry code until it succeeds"
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138"},
     {file = "tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb"},
@@ -7712,12 +7801,12 @@ version = "2025.2"
 description = "Provider of IANA time zone data"
 optional = false
 python-versions = ">=2"
-groups = ["rag"]
-markers = "platform_system == \"Windows\""
+groups = ["main", "rag"]
 files = [
     {file = "tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8"},
     {file = "tzdata-2025.2.tar.gz", hash = "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9"},
 ]
+markers = {main = "sys_platform == \"win32\"", rag = "platform_system == \"Windows\""}
 
 [[package]]
 name = "tzlocal"
@@ -7830,7 +7919,7 @@ version = "1.26.20"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
-groups = ["agent", "integrations", "rag"]
+groups = ["main", "agent", "integrations", "rag"]
 files = [
     {file = "urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e"},
     {file = "urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32"},
@@ -8598,7 +8687,7 @@ version = "0.24.0"
 description = "Zstandard bindings for Python"
 optional = false
 python-versions = ">=3.9"
-groups = ["agent", "rag"]
+groups = ["main", "agent", "rag"]
 files = [
     {file = "zstandard-0.24.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:af1394c2c5febc44e0bbf0fc6428263fa928b50d1b1982ce1d870dc793a8e5f4"},
     {file = "zstandard-0.24.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:5e941654cef13a1d53634ec30933722eda11f44f99e1d0bc62bbce3387580d50"},
@@ -8707,4 +8796,4 @@ cffi = ["cffi (>=1.17) ; python_version >= \"3.13\" and platform_python_implemen
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.13"
-content-hash = "f96bf78f0f514b49666c22e6a42bdde136d128170a5218a037b6b1a65edbe741"
+content-hash = "9a32d244d4fb41f615a5c5d0d614980713ed067666d9d9daae2fe109ee571c6e"

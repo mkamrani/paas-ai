@@ -76,8 +76,8 @@ class TestAgentCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup comprehensive mocks
@@ -90,6 +90,7 @@ class TestAgentCommandIntegration:
             mock_agent = Mock()
             mock_agent.ask_stream.return_value = ["Hello", " world"]
             mock_agent.chat_stream.return_value = ["Follow", " up"]
+            mock_agent.chat.return_value = "Follow up"
             mock_agent.get_available_tools.return_value = [
                 {"name": "rag_search", "description": "Search knowledge base"},
                 {"name": "design_specification", "description": "Create design specs"},
@@ -116,7 +117,7 @@ class TestAgentCommandIntegration:
                 "model_breakdown": {"gpt-3.5-turbo": {"total_tokens": 200, "requests": 2}},
             }
             mock_agent.clear_token_history = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock conversation flow
             mock_prompt.side_effect = [
@@ -132,29 +133,29 @@ class TestAgentCommandIntegration:
             # Test through agent group
             result = runner.invoke(
                 agent_group,
-                ["chat", "--config-profile", "local", "--show-config", "--max-history", "10"],
+                ["chat", "--config-profile", "local", "--show-config"],
             )
 
             # Verify complete workflow
             assert result.exit_code == 0
             assert "CONFIGURATION SUMMARY:" in result.output
             assert "Multi-Agent Mode: supervisor" in result.output
-            assert "Hello world" in result.output
+            assert "Follow up" in result.output
             assert "🔧 AVAILABLE TOOLS:" in result.output
             assert "rag_search" in result.output
             assert "⚙️  CURRENT CONFIGURATION:" in result.output
             assert "🪙 TOKEN USAGE SUMMARY:" in result.output
             assert "Follow up" in result.output
-            assert "🧹 Conversation history cleared!" in result.output
+            # Conversation history is now managed by LangGraph persistence
             assert "👋 Thanks for chatting! Goodbye!" in result.output
-            assert "📊 Session completed: 2 exchanges" in result.output
+            assert "📊 Session completed: 3 exchanges" in result.output
             assert "🪙 200 tokens used across 1 agents" in result.output
 
             # Verify all components were called
             mock_agent.get_config_summary.assert_called()
             mock_agent.get_available_tools.assert_called()
             mock_agent.get_token_session_summary.assert_called()
-            mock_agent.clear_token_history.assert_called()
+            # clear_token_history no longer available - LangGraph manages persistence
 
     def test_agent_commands_config_profile_integration(self):
         """Test agent commands with different config profiles."""
@@ -186,8 +187,8 @@ class TestAgentCommandIntegration:
             with patch(
                 "src.paas_ai.cli.commands.agent.chat.load_config"
             ) as mock_load_config, patch(
-                "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-            ) as mock_rag_agent_class, patch(
+                "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+            ) as mock_multi_agent_class, patch(
                 "src.paas_ai.cli.commands.agent.chat.click.prompt"
             ) as mock_prompt:
                 mock_config = Mock()
@@ -197,13 +198,15 @@ class TestAgentCommandIntegration:
                 mock_load_config.return_value = mock_config
 
                 mock_agent = Mock()
-                mock_rag_agent_class.return_value = mock_agent
+                mock_agent.chat_stream.return_value = ["Response"]
+                mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+                mock_multi_agent_class.return_value = mock_agent
                 mock_prompt.side_effect = ["exit"]
 
                 result = runner.invoke(agent_group, ["chat", "--config-profile", profile])
 
                 assert result.exit_code == 0
-                assert "🤖 RAG AGENT INTERACTIVE CHAT SESSION" in result.output
+                assert "🤖 MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
 
     def test_agent_commands_error_propagation_integration(self):
         """Test error propagation through agent command system."""
@@ -244,8 +247,8 @@ class TestAgentCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -257,7 +260,10 @@ class TestAgentCommandIntegration:
 
             mock_agent = Mock()
             mock_agent.ask_stream.return_value = ["Streaming", " response", " tokens"]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Streaming", " response", " tokens"]
+            mock_agent.chat.return_value = "Streaming response tokens"
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["Test question", "exit"]
@@ -275,7 +281,7 @@ class TestAgentCommandIntegration:
             result = runner.invoke(agent_group, ["chat", "--direct-streaming"])
 
             assert result.exit_code == 0
-            assert "Direct streaming" in result.output
+            assert "Streaming response tokens" in result.output
 
     def test_agent_commands_multi_agent_integration(self):
         """Test multi-agent system integration."""
@@ -338,8 +344,8 @@ class TestAgentCommandCrossComponentIntegration:
         ) as mock_chat_load_config, patch(
             "src.paas_ai.cli.commands.agent.ask.RAGAgent"
         ) as mock_ask_rag_agent_class, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_chat_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_chat_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup consistent mocks
@@ -355,7 +361,7 @@ class TestAgentCommandCrossComponentIntegration:
             mock_ask_rag_agent_class.return_value = mock_ask_agent
 
             mock_chat_agent = Mock()
-            mock_chat_rag_agent_class.return_value = mock_chat_agent
+            mock_chat_multi_agent_class.return_value = mock_chat_agent
             mock_prompt.side_effect = ["exit"]
 
             # Test ask command
@@ -459,8 +465,8 @@ class TestAgentCommandPerformanceIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -471,15 +477,17 @@ class TestAgentCommandPerformanceIntegration:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Test with large conversation history
             mock_prompt.side_effect = ["exit"]
 
-            result = runner.invoke(agent_group, ["chat", "--max-history", "100"])
+            result = runner.invoke(agent_group, ["chat"])
 
             assert result.exit_code == 0
-            assert "📝 Max history: 100 messages" in result.output
+            assert "MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
 
 
 class TestAgentCommandCompatibilityIntegration:
@@ -521,8 +529,8 @@ class TestAgentCommandCompatibilityIntegration:
             assert result.exit_code == 0
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             mock_config = Mock()

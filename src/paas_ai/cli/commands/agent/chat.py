@@ -6,7 +6,8 @@ from typing import Optional
 
 import click
 
-from paas_ai.core.agents import RAGAgent
+from paas_ai.core.agents.multi_agent_system import MultiAgentSystem
+from paas_ai.core.agents.persistence import generate_thread_id
 from paas_ai.core.config import ConfigurationError, load_config
 from paas_ai.utils.logging import get_logger
 
@@ -61,7 +62,9 @@ def _extract_chunk_content(chunk) -> str:
     return ""
 
 
-def _stream_response(agent, question=None, messages=None, debug=False, direct=False):
+def _stream_response(
+    agent, question=None, messages=None, debug=False, direct=False, thread_id=None
+):
     """
     Stream response from agent and return the complete response.
 
@@ -71,6 +74,7 @@ def _stream_response(agent, question=None, messages=None, debug=False, direct=Fa
         messages: Messages for chat_stream (if not using ask)
         debug: If True, show detailed debugging info
         direct: If True, use direct streaming (bypass coordinator)
+        thread_id: Thread ID for conversation persistence
 
     Returns:
         str: Complete response text
@@ -85,9 +89,8 @@ def _stream_response(agent, question=None, messages=None, debug=False, direct=Fa
             else:
                 stream = agent.ask_stream(question)
         elif messages is not None:
-            # For chat, we'll use the regular streaming for now
-            # Could add direct chat streaming later if needed
-            stream = agent.chat_stream(messages)
+            # For chat, use streaming with thread persistence
+            stream = agent.chat_stream(messages, thread_id=thread_id)
         else:
             raise ValueError("Either question or messages must be provided")
 
@@ -132,7 +135,7 @@ def _stream_response(agent, question=None, messages=None, debug=False, direct=Fa
 @click.command()
 @click.option("--config-profile", help="Override config profile for this operation")
 @click.option("--show-config", is_flag=True, help="Show configuration summary")
-@click.option("--max-history", default=20, help="Maximum number of messages to keep in history")
+@click.option("--thread-id", help="Conversation thread ID (auto-generated if not provided)")
 @click.option(
     "--debug-streaming", is_flag=True, help="Debug streaming chunks (shows raw chunk data)"
 )
@@ -142,33 +145,30 @@ def _stream_response(agent, question=None, messages=None, debug=False, direct=Fa
 def chat_command(
     config_profile: Optional[str],
     show_config: bool,
-    max_history: int,
+    thread_id: Optional[str],
     debug_streaming: bool,
     direct_streaming: bool,
 ):
     """
-    Start an interactive chat session with the RAG agent.
+    Start an interactive chat session with persistent conversation history.
 
-    This creates a persistent conversation where the agent remembers context
-    from previous messages in the session. Use this for complex discussions
-    or when you need to refer back to earlier parts of the conversation.
+    Uses LangGraph's built-in persistence to maintain conversation context
+    across sessions. Each conversation is identified by a unique thread ID.
 
     Examples:
 
-        # Start a basic chat session
+        # Start a basic chat session (auto-generates thread ID)
         paas-ai agent chat
+
+        # Continue an existing conversation
+        paas-ai agent chat --thread-id chat_1234567890_abcd1234
 
         # Start with configuration display
         paas-ai agent chat --show-config
 
-        # Limit conversation history to 10 exchanges
-        paas-ai agent chat --max-history 10
-
     Available commands during chat:
 
         • Ask any question about your knowledge base
-        • 'history' - View conversation history
-        • 'clear' - Clear conversation history
         • 'tools' - Show available agent tools
         • 'config' - Show current configuration
         • 'tokens' - Show token usage summary (when tracking enabled)
@@ -193,8 +193,15 @@ def chat_command(
 
         logger.info(f"Using configuration with {config.embedding.type} embeddings")
 
-        # Initialize agent
-        agent = RAGAgent(config)
+        # Initialize agent system
+        agent = MultiAgentSystem(config)
+
+        # Generate thread ID if not provided
+        if not thread_id:
+            thread_id = generate_thread_id()
+            click.echo(f"📝 Starting new conversation (Thread: {thread_id})")
+        else:
+            click.echo(f"📝 Continuing conversation (Thread: {thread_id})")
 
         # Show config summary if requested
         if show_config:
@@ -213,31 +220,26 @@ def chat_command(
             )
             click.echo(f"Collection: {config_summary['vectorstore']['collection']}")
 
-            # Show multi-agent info if available
-            if "multi_agent" in config_summary:
-                ma_config = config_summary["multi_agent"]
-                click.echo(f"Multi-Agent Mode: {ma_config['mode']}")
-                click.echo(f"Agents: {', '.join(ma_config['agents'])}")
-                click.echo(f"Token Tracking: {'ON' if ma_config['track_tokens'] else 'OFF'}")
-                click.echo(f"Verbose Mode: {'ON' if ma_config['verbose'] else 'OFF'}")
+            ma_config = config_summary["multi_agent"]
+            click.echo(f"Multi-Agent Mode: {ma_config['mode']}")
+            click.echo(f"Agents: {', '.join(ma_config['agents'])}")
+            click.echo(f"Token Tracking: {'ON' if ma_config['track_tokens'] else 'OFF'}")
+            click.echo(f"Verbose Mode: {'ON' if ma_config['verbose'] else 'OFF'}")
 
             click.echo("=" * 60 + "\n")
 
-        # Initialize conversation history
-        conversation_history = []
+        # Conversation history is now managed by LangGraph persistence
 
         click.echo("\n" + "=" * 60)
-        click.echo("🤖 RAG AGENT INTERACTIVE CHAT SESSION")
+        click.echo("🤖 MULTI-AGENT INTERACTIVE CHAT SESSION")
         click.echo("=" * 60)
         click.echo("💡 Commands:")
         click.echo("  • 'exit' or 'quit' - End the session")
-        click.echo("  • 'clear' - Clear conversation history")
-        click.echo("  • 'history' - Show conversation history")
         click.echo("  • 'tools' - Show available tools")
         click.echo("  • 'config' - Show current configuration")
         click.echo("  • 'tokens' - Show token usage summary")
         click.echo("=" * 60)
-        click.echo(f"📝 Max history: {max_history} messages")
+        click.echo(f"🧵 Thread: {thread_id}")
         click.echo("=" * 60 + "\n")
 
         session_count = 0
@@ -253,32 +255,7 @@ def chat_command(
                     click.echo(click.style("\n👋 Thanks for chatting! Goodbye!", fg="green"))
                     break
 
-                if question.lower() == "clear":
-                    conversation_history = []
-                    session_count = 0
-                    # Don't reset total_exchanges - keep track of total session activity
-
-                    # Also clear token history if tracking is enabled
-                    if hasattr(agent, "config") and agent.config.multi_agent.track_tokens:
-                        agent.clear_token_history()
-
-                    click.echo(click.style("🧹 Conversation history cleared!\n", fg="yellow"))
-                    continue
-
-                if question.lower() == "history":
-                    if not conversation_history:
-                        click.echo(click.style("📝 No conversation history yet.\n", fg="yellow"))
-                    else:
-                        click.echo(click.style("\n📜 CONVERSATION HISTORY:", fg="cyan", bold=True))
-                        click.echo("=" * 50)
-                        for i, msg in enumerate(conversation_history, 1):
-                            role = "You" if isinstance(msg, HumanMessage) else "Agent"
-                            color = "blue" if isinstance(msg, HumanMessage) else "green"
-                            click.echo(
-                                f"{click.style(f'{i}. {role}:', fg=color, bold=True)} {msg.content[:100]}{'...' if len(msg.content) > 100 else ''}"
-                            )
-                        click.echo("=" * 50 + "\n")
-                    continue
+                # History and clearing are handled by LangGraph persistence
 
                 if question.lower() == "tools":
                     tools = agent.get_available_tools()
@@ -351,31 +328,26 @@ def chat_command(
                 if not question.strip():
                     continue
 
-                # Add user message to history
+                # Create user message (LangGraph will handle persistence)
                 user_message = HumanMessage(content=question)
-                conversation_history.append(user_message)
 
                 # Get agent response using conversation history
                 click.echo(click.style("🤔 Agent is thinking...", fg="yellow"))
 
                 # Start response display
+                # TODO: Show this when the response actually starts
                 click.echo(f"\n{click.style('🤖 Agent:', fg='green', bold=True)} ", nl=False)
 
                 # Stream the response
                 try:
-                    if len(conversation_history) == 1:
-                        # First message, use simple ask with streaming
-                        response = _stream_response(
-                            agent, question=question, debug=debug_streaming, direct=direct_streaming
-                        )
-                    else:
-                        # Use chat with conversation history and streaming
-                        response = _stream_response(
-                            agent,
-                            messages=conversation_history,
-                            debug=debug_streaming,
-                            direct=direct_streaming,
-                        )
+                    # Use chat with single message - LangGraph will load conversation history automatically
+                    response = _stream_response(
+                        agent,
+                        messages=[user_message],
+                        debug=debug_streaming,
+                        direct=direct_streaming,
+                        thread_id=thread_id,
+                    )
 
                     click.echo("\n")  # Add newline after streaming
 
@@ -388,25 +360,11 @@ def chat_command(
                         )
                     )
 
-                    if len(conversation_history) == 1:
-                        response = agent.ask(question)
-                    else:
-                        response = agent.chat(conversation_history)
-
+                    # Fallback to non-streaming with thread persistence
+                    response = agent.chat([user_message], thread_id=thread_id)
                     click.echo(f"{response}\n")
 
-                # Add agent response to history
-                agent_message = AIMessage(content=response)
-                conversation_history.append(agent_message)
-
-                # Trim history if it gets too long
-                if (
-                    len(conversation_history) > max_history * 2
-                ):  # *2 because each exchange is 2 messages
-                    conversation_history = conversation_history[-max_history * 2 :]
-                    click.echo(
-                        click.style("📝 Trimmed old conversation history", fg="yellow", dim=True)
-                    )
+                # LangGraph automatically manages conversation history via checkpointer
 
                 # Display response (response already shown during streaming)
                 session_count += 1
@@ -428,7 +386,7 @@ def chat_command(
                     if total_tokens > 0:
                         click.echo(
                             click.style(
-                                f"💬 Messages: {len(conversation_history)} | Exchanges: {session_count} | "
+                                f"💬 Exchanges: {session_count} | "
                                 f"🪙 Tokens: {total_tokens} ({', '.join(agents_used)})",
                                 fg="cyan",
                                 dim=True,
@@ -437,7 +395,7 @@ def chat_command(
                     else:
                         click.echo(
                             click.style(
-                                f"💬 Messages in session: {len(conversation_history)} | Exchanges: {session_count}",
+                                f"💬 Exchanges in session: {session_count}",
                                 fg="cyan",
                                 dim=True,
                             )
@@ -445,7 +403,7 @@ def chat_command(
                 else:
                     click.echo(
                         click.style(
-                            f"💬 Messages in session: {len(conversation_history)} | Exchanges: {session_count}",
+                            f"💬 Exchanges in session: {session_count}",
                             fg="cyan",
                             dim=True,
                         )
@@ -481,7 +439,7 @@ def chat_command(
                 if total_tokens > 0:
                     click.echo(
                         click.style(
-                            f"📊 Session completed: {total_exchanges} exchanges, {len(conversation_history)} total messages, "
+                            f"📊 Session completed: {total_exchanges} exchanges, "
                             f"🪙 {total_tokens} tokens used across {len(agents_used)} agents ({session_duration:.1f}s)",
                             fg="green",
                         )
@@ -489,14 +447,14 @@ def chat_command(
                 else:
                     click.echo(
                         click.style(
-                            f"📊 Session completed: {total_exchanges} exchanges, {len(conversation_history)} total messages",
+                            f"📊 Session completed: {total_exchanges} exchanges",
                             fg="green",
                         )
                     )
             else:
                 click.echo(
                     click.style(
-                        f"📊 Session completed: {total_exchanges} exchanges, {len(conversation_history)} total messages",
+                        f"📊 Session completed: {total_exchanges} exchanges",
                         fg="green",
                     )
                 )

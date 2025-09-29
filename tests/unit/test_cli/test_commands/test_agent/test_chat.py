@@ -121,7 +121,7 @@ class TestStreamResponse:
         result = _stream_response(mock_agent, messages=messages)
 
         assert result == "Chat response"
-        mock_agent.chat_stream.assert_called_once_with(messages)
+        mock_agent.chat_stream.assert_called_once_with(messages, thread_id=None)
 
     def test_stream_response_with_debug_mode(self):
         """Test streaming response with debug mode."""
@@ -166,8 +166,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -178,8 +178,9 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["Hello", " world"]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Hello", " world"]
+            mock_agent.chat.return_value = "Hello world"
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["Hello", "exit"]
@@ -189,7 +190,7 @@ class TestChatCommand:
 
             # Verify
             assert result.exit_code == 0
-            assert "🤖 RAG AGENT INTERACTIVE CHAT SESSION" in result.output
+            assert "🤖 MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
             assert "Hello world" in result.output
             assert "👋 Thanks for chatting! Goodbye!" in result.output
 
@@ -198,8 +199,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -210,7 +211,8 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["Response"]
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.chat.return_value = "Response"
             mock_agent.get_config_summary.return_value = {
                 "llm": {"provider": "openai", "model": "gpt-3.5-turbo"},
                 "embedding": {"type": "openai", "model": "text-embedding-3-small"},
@@ -222,7 +224,7 @@ class TestChatCommand:
                     "verbose": False,
                 },
             }
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["exit"]
@@ -241,8 +243,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -253,8 +255,9 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["Response"]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.chat.return_value = "Response"
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["exit"]
@@ -264,15 +267,15 @@ class TestChatCommand:
 
             # Verify
             assert result.exit_code == 0
-            assert "🤖 RAG AGENT INTERACTIVE CHAT SESSION" in result.output
+            assert "🤖 MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
 
-    def test_chat_command_with_max_history(self):
-        """Test chat command with --max-history option."""
+    def test_chat_command_with_thread_id(self):
+        """Test chat command with --thread-id option."""
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -283,26 +286,27 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["Response"]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.chat.return_value = "Response"
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["exit"]
 
             # Run command
-            result = runner.invoke(chat_command, ["--max-history", "10"])
+            result = runner.invoke(chat_command, ["--thread-id", "test123"])
 
             # Verify
             assert result.exit_code == 0
-            assert "📝 Max history: 10 messages" in result.output
+            assert "Thread: test123" in result.output
 
-    def test_chat_command_history_command(self):
-        """Test chat command history special command."""
+    def test_chat_command_session_info(self):
+        """Test chat command shows session info."""
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -313,25 +317,27 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
-            # Mock user input: history command then exit
-            mock_prompt.side_effect = ["history", "exit"]
+            # Mock user input then exit
+            mock_prompt.side_effect = ["test", "exit"]
 
             # Run command
             result = runner.invoke(chat_command, [])
 
             # Verify
             assert result.exit_code == 0
-            assert "📝 No conversation history yet." in result.output
+            assert "📝 Starting new conversation" in result.output
 
-    def test_chat_command_clear_command(self):
-        """Test chat command clear special command."""
+    def test_chat_command_new_session(self):
+        """Test chat command starts new conversation with LangGraph persistence."""
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -342,26 +348,27 @@ class TestChatCommand:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.clear_token_history = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
-            # Mock user input: clear command then exit
-            mock_prompt.side_effect = ["clear", "exit"]
+            # Mock user input then exit
+            mock_prompt.side_effect = ["test", "exit"]
 
             # Run command
             result = runner.invoke(chat_command, [])
 
             # Verify
             assert result.exit_code == 0
-            assert "🧹 Conversation history cleared!" in result.output
+            assert "MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
 
     def test_chat_command_tools_command(self):
         """Test chat command tools special command."""
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -379,7 +386,7 @@ class TestChatCommand:
                     "args_schema": {"required": ["param1"]},
                 }
             ]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: tools command then exit
             mock_prompt.side_effect = ["tools", "exit"]
@@ -399,8 +406,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -415,8 +422,14 @@ class TestChatCommand:
                 "llm": {"provider": "openai", "model": "gpt-3.5-turbo"},
                 "embedding": {"type": "openai", "model": "text-embedding-3-small"},
                 "vectorstore": {"type": "chroma", "directory": "/tmp/chroma", "collection": "test"},
+                "multi_agent": {
+                    "mode": "single",
+                    "agents": ["rag_agent"],
+                    "track_tokens": False,
+                    "verbose": False,
+                },
             }
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: config command then exit
             mock_prompt.side_effect = ["config", "exit"]
@@ -434,8 +447,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -455,7 +468,7 @@ class TestChatCommand:
                 "agent_breakdown": {"designer": {"total_tokens": 150, "requests": 2}},
                 "model_breakdown": {"gpt-3.5-turbo": {"total_tokens": 150, "requests": 2}},
             }
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: tokens command then exit
             mock_prompt.side_effect = ["tokens", "exit"]
@@ -477,8 +490,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -490,7 +503,7 @@ class TestChatCommand:
 
             mock_agent = Mock()
             mock_agent.config = mock_config
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: tokens command then exit
             mock_prompt.side_effect = ["tokens", "exit"]
@@ -512,8 +525,8 @@ class TestChatCommand:
             with patch(
                 "src.paas_ai.cli.commands.agent.chat.load_config"
             ) as mock_load_config, patch(
-                "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-            ) as mock_rag_agent_class, patch(
+                "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+            ) as mock_multi_agent_class, patch(
                 "src.paas_ai.cli.commands.agent.chat.click.prompt"
             ) as mock_prompt:
                 # Setup mocks
@@ -524,7 +537,7 @@ class TestChatCommand:
                 mock_load_config.return_value = mock_config
 
                 mock_agent = Mock()
-                mock_rag_agent_class.return_value = mock_agent
+                mock_multi_agent_class.return_value = mock_agent
 
                 # Mock user input: exit command
                 mock_prompt.side_effect = [exit_cmd]
@@ -558,8 +571,8 @@ class TestChatCommand:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -571,7 +584,7 @@ class TestChatCommand:
 
             mock_agent = Mock()
             mock_agent.ask_stream.side_effect = Exception("Agent processing error")
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: question then exit
             mock_prompt.side_effect = ["Test question", "exit"]
@@ -593,8 +606,8 @@ class TestChatCommandEdgeCases:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -605,7 +618,7 @@ class TestChatCommandEdgeCases:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: empty string then exit
             mock_prompt.side_effect = ["", "exit"]
@@ -623,8 +636,8 @@ class TestChatCommandEdgeCases:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -635,7 +648,7 @@ class TestChatCommandEdgeCases:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: whitespace then exit
             mock_prompt.side_effect = ["   ", "exit"]
@@ -653,8 +666,8 @@ class TestChatCommandEdgeCases:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -665,7 +678,7 @@ class TestChatCommandEdgeCases:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: keyboard interrupt
             mock_prompt.side_effect = KeyboardInterrupt()
@@ -682,8 +695,8 @@ class TestChatCommandEdgeCases:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt, patch(
             "src.paas_ai.cli.commands.agent.chat._stream_response"
@@ -697,7 +710,9 @@ class TestChatCommandEdgeCases:
 
             mock_agent = Mock()
             mock_agent.ask.return_value = "Fallback response"
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat.return_value = "Fallback response"
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock streaming to fail
             mock_stream_response.side_effect = Exception("Streaming failed")
@@ -713,13 +728,13 @@ class TestChatCommandEdgeCases:
             assert "⚠️ Streaming failed, falling back to standard mode" in result.output
             assert "Fallback response" in result.output
 
-    def test_chat_command_history_trimming(self):
-        """Test chat command with history trimming."""
+    def test_chat_command_multiple_exchanges(self):
+        """Test chat command with multiple exchanges using LangGraph persistence."""
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -731,40 +746,41 @@ class TestChatCommandEdgeCases:
 
             mock_agent = Mock()
             # Mock all the streaming methods to return proper string responses
-            mock_agent.ask_stream.return_value = ["Response"]
             mock_agent.chat_stream.return_value = ["Response"]
-            # Mock fallback methods
-            mock_agent.ask.return_value = "Response"
             mock_agent.chat.return_value = "Response"
             # Mock other methods that might be called
             mock_agent.get_config_summary.return_value = {
                 "llm": {"provider": "test", "model": "test"},
                 "embedding": {"type": "openai", "model": "test"},
                 "vectorstore": {"type": "test", "directory": "test", "collection": "test"},
+                "multi_agent": {
+                    "mode": "single",
+                    "agents": ["rag_agent"],
+                    "track_tokens": False,
+                    "verbose": False,
+                },
             }
             mock_agent.get_available_tools.return_value = []
             mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
-            # Mock many user inputs to trigger history trimming
-            # We need enough inputs to exceed max_history * 2 (which is 10 for max_history=5)
-            # Each exchange adds 2 messages (user + agent), so we need 6+ exchanges
-            mock_prompt.side_effect = ["Question"] * 12 + ["exit"]
+            # Mock multiple user inputs
+            mock_prompt.side_effect = ["Question1", "Question2", "Question3", "exit"]
 
-            # Run command with small max history
-            result = runner.invoke(chat_command, ["--max-history", "5"])
+            # Run command
+            result = runner.invoke(chat_command, [])
 
             # Verify
             assert result.exit_code == 0
-            assert "📝 Trimmed old conversation history" in result.output
+            assert "💬 Exchanges in session:" in result.output
 
     def test_chat_command_with_verbose_token_tracking(self):
         """Test chat command with verbose mode and token tracking."""
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -775,13 +791,14 @@ class TestChatCommandEdgeCases:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_agent.ask_stream.return_value = ["Response"]
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.chat.return_value = "Response"
             mock_agent.get_token_session_summary.return_value = {
                 "total_tokens": 100,
                 "agents_used": ["designer"],
                 "session_duration": 3.5,
             }
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: question then exit
             mock_prompt.side_effect = ["Test question", "exit"]
@@ -803,8 +820,8 @@ class TestChatCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -817,6 +834,7 @@ class TestChatCommandIntegration:
             mock_agent = Mock()
             mock_agent.ask_stream.return_value = ["First response"]
             mock_agent.chat_stream.return_value = ["Second response"]
+            mock_agent.chat.return_value = "Second response"
             mock_agent.get_available_tools.return_value = [
                 {"name": "test_tool", "description": "Test"}
             ]
@@ -824,6 +842,12 @@ class TestChatCommandIntegration:
                 "llm": {"provider": "openai", "model": "gpt-3.5-turbo"},
                 "embedding": {"type": "openai", "model": "text-embedding-3-small"},
                 "vectorstore": {"type": "chroma", "directory": "/tmp/chroma", "collection": "test"},
+                "multi_agent": {
+                    "mode": "single",
+                    "agents": ["rag_agent"],
+                    "track_tokens": False,
+                    "verbose": False,
+                },
             }
             # Set up agent config to avoid Mock comparison errors
             mock_agent.config = mock_config
@@ -833,7 +857,7 @@ class TestChatCommandIntegration:
                 "agents_used": [],
                 "session_duration": 0.0,
             }
-            mock_rag_agent_class.return_value = mock_agent
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock conversation flow
             mock_prompt.side_effect = [
@@ -850,7 +874,7 @@ class TestChatCommandIntegration:
             # Verify
             assert result.exit_code == 0
             assert "CONFIGURATION SUMMARY:" in result.output
-            assert "First response" in result.output
+            assert "Second response" in result.output
             assert "🔧 AVAILABLE TOOLS:" in result.output
             assert "⚙️  CURRENT CONFIGURATION:" in result.output
             assert "Second response" in result.output
@@ -862,8 +886,8 @@ class TestChatCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -875,7 +899,10 @@ class TestChatCommandIntegration:
 
             mock_agent = Mock()
             mock_agent.ask_stream.return_value = ["Debug", " response"]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Debug", " response"]
+            mock_agent.chat.return_value = "Debug response"
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["Test question", "exit"]
@@ -892,8 +919,8 @@ class TestChatCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -905,7 +932,10 @@ class TestChatCommandIntegration:
 
             mock_agent = Mock()
             mock_agent.ask_stream_direct.return_value = ["Direct", " response"]
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Direct", " response"]
+            mock_agent.chat.return_value = "Direct response"
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["Test question", "exit"]
@@ -922,8 +952,8 @@ class TestChatCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -936,7 +966,10 @@ class TestChatCommandIntegration:
             mock_agent = Mock()
             mock_agent.ask_stream.side_effect = Exception("Processing error")
             mock_agent.ask.return_value = "Fallback response"
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.side_effect = Exception("Processing error")
+            mock_agent.chat.return_value = "Fallback response"
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input: question then exit
             mock_prompt.side_effect = ["Test question", "exit"]
@@ -948,5 +981,5 @@ class TestChatCommandIntegration:
             assert result.exit_code == 0
             assert "⚠️ Streaming failed, falling back to standard mode" in result.output
             assert "Fallback response" in result.output
-            assert "💡 You can continue chatting or type 'exit' to quit." in result.output
+            assert "💬 Exchanges in session: 1" in result.output
             assert "👋 Thanks for chatting! Goodbye!" in result.output

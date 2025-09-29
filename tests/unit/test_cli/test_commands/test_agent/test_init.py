@@ -88,7 +88,7 @@ class TestAgentGroup:
         assert "Start an interactive chat session" in result.output
         assert "--config-profile" in result.output
         assert "--show-config" in result.output
-        assert "--max-history" in result.output
+        assert "--thread-id" in result.output
 
     def test_agent_group_invalid_command(self):
         """Test that agent group handles invalid commands."""
@@ -175,8 +175,8 @@ class TestAgentCommandIntegration:
         runner = CliRunner()
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             # Setup mocks
@@ -187,7 +187,9 @@ class TestAgentCommandIntegration:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
 
             # Mock user input and exit
             mock_prompt.side_effect = ["exit"]
@@ -197,7 +199,7 @@ class TestAgentCommandIntegration:
 
             # Verify
             assert result.exit_code == 0
-            assert "🤖 RAG AGENT INTERACTIVE CHAT SESSION" in result.output
+            assert "🤖 MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
             assert "👋 Thanks for chatting! Goodbye!" in result.output
 
     def test_agent_group_command_discovery(self):

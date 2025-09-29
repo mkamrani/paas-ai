@@ -168,8 +168,8 @@ class TestAgentCommandUtilities:
 
         # Test chat command with various options
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             mock_config = Mock()
@@ -179,13 +179,15 @@ class TestAgentCommandUtilities:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
             mock_prompt.side_effect = ["exit"]
 
-            # Test with max-history option
-            result = runner.invoke(agent_group, ["chat", "--max-history", "10"])
+            # Test with thread-id option
+            result = runner.invoke(agent_group, ["chat", "--thread-id", "test123"])
             assert result.exit_code == 0
-            assert "📝 Max history: 10 messages" in result.output
+            assert "Thread: test123" in result.output
 
 
 class TestAgentCommandEdgeCases:
@@ -314,8 +316,8 @@ class TestAgentCommandCompatibility:
             assert result.exit_code == 0
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             mock_config = Mock()
@@ -355,8 +357,8 @@ class TestAgentCommandCompatibility:
             assert "=" * 60 in result.output  # Separator lines
 
         with patch("src.paas_ai.cli.commands.agent.chat.load_config") as mock_load_config, patch(
-            "src.paas_ai.cli.commands.agent.chat.RAGAgent"
-        ) as mock_rag_agent_class, patch(
+            "src.paas_ai.cli.commands.agent.chat.MultiAgentSystem"
+        ) as mock_multi_agent_class, patch(
             "src.paas_ai.cli.commands.agent.chat.click.prompt"
         ) as mock_prompt:
             mock_config = Mock()
@@ -366,11 +368,13 @@ class TestAgentCommandCompatibility:
             mock_load_config.return_value = mock_config
 
             mock_agent = Mock()
-            mock_rag_agent_class.return_value = mock_agent
+            mock_agent.chat_stream.return_value = ["Response"]
+            mock_agent.get_token_session_summary.return_value = {"total_tokens": 0}
+            mock_multi_agent_class.return_value = mock_agent
             mock_prompt.side_effect = ["exit"]
 
             # Test chat command output
             result = runner.invoke(agent_group, ["chat"])
             assert result.exit_code == 0
-            assert "🤖 RAG AGENT INTERACTIVE CHAT SESSION" in result.output
+            assert "🤖 MULTI-AGENT INTERACTIVE CHAT SESSION" in result.output
             assert "👋 Thanks for chatting! Goodbye!" in result.output

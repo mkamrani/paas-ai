@@ -25,3 +25,6 @@ rag_data/
 
 # IDE settings (personal configurations)
 .vscode/settings.local.json
+
+# Notebooks
+.ipynb_checkpoints/
